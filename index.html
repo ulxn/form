@@ -56,7 +56,8 @@
             --toast-text: #3a2c3c;
             --toast-shadow: 0 8px 32px rgba(160,140,175,0.35);
             --captcha-bg: #ffffff;
-            --captcha-border: var(--l-300);
+            --captcha-border: #f5cbcb;
+            --captcha-text: #1a1a1a;
         }
 
         body.dark-theme {
@@ -83,8 +84,9 @@
             --toast-bg: var(--d-300);
             --toast-text: #f5eef2;
             --toast-shadow: 0 8px 32px rgba(0,0,0,0.60);
-            --captcha-bg: #2a2b4a;
+            --captcha-bg: #23244080;
             --captcha-border: #46477a;
+            --captcha-text: #f0f0f0;
         }
 
         body {
@@ -295,6 +297,9 @@
         .captcha-wrapper .g-recaptcha {
             transform: scale(0.92);
             transform-origin: center;
+        }
+        .captcha-wrapper iframe {
+            filter: var(--captcha-filter, none);
         }
         body:not(.light-theme) .captcha-wrapper iframe {
             filter: invert(0.85) hue-rotate(180deg);
