@@ -279,7 +279,7 @@
             text-align: right;
         }
 
-        /* reCAPTCHA wrapper */
+        /* reCAPTCHA wrapper – theme aware */
         .captcha-wrapper {
             display: flex;
             justify-content: center;
@@ -296,8 +296,12 @@
             transform: scale(0.92);
             transform-origin: center;
         }
-        body:not(.light-theme) .captcha-wrapper iframe {
+        /* Dark theme filter for reCAPTCHA iframe (fallback) */
+        body.dark-theme .captcha-wrapper iframe {
             filter: invert(0.85) hue-rotate(180deg);
+        }
+        body.light-theme .captcha-wrapper iframe {
+            filter: none;
         }
         @media (max-width: 480px) {
             .captcha-wrapper .g-recaptcha { transform: scale(0.85); }
@@ -653,7 +657,7 @@
                             <div id="msg-counter" class="counter">0 / 300</div>
                         </div>
 
-                        <!-- reCAPTCHA v2 widget -->
+                        <!-- reCAPTCHA v2 widget – theme will be set by JavaScript -->
                         <div class="captcha-wrapper">
                             <div class="g-recaptcha" data-sitekey="6LcQMEMtAAAAAB5C53tqVt0ghyZEyAQeipFIXcax"></div>
                         </div>
@@ -705,7 +709,7 @@
             </div>
         </div>
     </div>
- 
+
     <script>
         (function() {
             'use strict';
@@ -713,10 +717,10 @@
             // ============================================================
             // 0. CONFIG – REPLACE WITH YOUR VALUES
             // ============================================================
-            const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwceol5RTl762THc0xaxIOUJ9D2LFglIQf1DmqxJEFZ2exoE-AE7PxpbcgmikCOEpNiyw/exec'; // ← your Apps Script URL
+            const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwceol5RTl762THc0xaxIOUJ9D2LFglIQf1DmqxJEFZ2exoE-AE7PxpbcgmikCOEpNiyw/exec';
 
             // ============================================================
-            // 1. THEME TOGGLE
+            // 1. THEME TOGGLE (with reCAPTCHA theme sync)
             // ============================================================
             const themeToggle = document.getElementById('theme-toggle');
             const body = document.body;
@@ -726,6 +730,10 @@
                 const isDark = theme === 'dark';
                 body.classList.toggle('dark-theme', isDark);
                 icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+                // Update reCAPTCHA theme after a small delay
+                setTimeout(function() {
+                    updateRecaptchaTheme();
+                }, 100);
             }
 
             let currentTheme = localStorage.getItem('theme') || 'light';
@@ -735,23 +743,72 @@
                 currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
                 localStorage.setItem('theme', currentTheme);
                 applyTheme(currentTheme);
-                // Re-render reCAPTCHA with correct theme
-                if (typeof grecaptcha !== 'undefined') {
-                    const isLight = body.classList.contains('light-theme');
-                    const widgets = document.querySelectorAll('.g-recaptcha');
-                    widgets.forEach(function(el) {
-                        const widgetId = grecaptcha.getWidgetIndex(el);
-                        if (widgetId !== -1) {
-                            const sitekey = el.getAttribute('data-sitekey');
-                            el.innerHTML = '';
-                            grecaptcha.render(el, { sitekey: sitekey, theme: isLight ? 'light' : 'dark' });
-                        }
-                    });
-                }
             });
 
             // ============================================================
-            // 2. MESSAGE STORE (localStorage)
+            // 2. reCAPTCHA – render with current theme
+            // ============================================================
+            let recaptchaReady = false;
+            let recaptchaWidgetId = null;
+
+            function getRecaptchaTheme() {
+                return body.classList.contains('dark-theme') ? 'dark' : 'light';
+            }
+
+            function renderRecaptcha() {
+                const el = document.querySelector('.g-recaptcha');
+                if (!el) return;
+                const sitekey = el.getAttribute('data-sitekey');
+                if (!sitekey || sitekey === '6LcQMEMtAAAAAB5C53tqVt0ghyZEyAQeipFIXcax') {
+                    console.warn('reCAPTCHA site key not configured.');
+                    return;
+                }
+                const theme = getRecaptchaTheme();
+                // Clear previous render
+                if (recaptchaWidgetId !== null) {
+                    try {
+                        grecaptcha.reset(recaptchaWidgetId);
+                        grecaptcha.remove(recaptchaWidgetId);
+                    } catch (_) {}
+                    recaptchaWidgetId = null;
+                }
+                el.innerHTML = '';
+                recaptchaWidgetId = grecaptcha.render(el, {
+                    sitekey: sitekey,
+                    theme: theme
+                });
+                recaptchaReady = true;
+            }
+
+            function updateRecaptchaTheme() {
+                if (typeof grecaptcha === 'undefined' || !recaptchaReady) {
+                    // If not ready yet, just mark that it should update on load
+                    return;
+                }
+                renderRecaptcha();
+            }
+
+            function loadRecaptcha() {
+                if (recaptchaReady) return;
+                if (typeof grecaptcha !== 'undefined' && grecaptcha.render) {
+                    renderRecaptcha();
+                    return;
+                }
+                window.recaptchaOnLoadCallback = function() {
+                    renderRecaptcha();
+                };
+                const script = document.createElement('script');
+                script.src = 'https://www.google.com/recaptcha/api.js?onload=recaptchaOnLoadCallback&render=explicit';
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+            }
+
+            // Load reCAPTCHA immediately
+            loadRecaptcha();
+
+            // ============================================================
+            // 3. MESSAGE STORE (localStorage)
             // ============================================================
             const STORAGE_KEY = 'zw_messages';
             const PAGE_SIZE = 5;
@@ -789,7 +846,7 @@
             let allMessages = loadMessages();
 
             // ============================================================
-            // 3. RENDER MESSAGES
+            // 4. RENDER MESSAGES
             // ============================================================
             let currentPage = 1;
 
@@ -864,7 +921,7 @@
             renderMessages(1);
 
             // ============================================================
-            // 4. TEXTAREA COUNTER
+            // 5. TEXTAREA COUNTER
             // ============================================================
             const msg = document.getElementById('form-message');
             const counter = document.getElementById('msg-counter');
@@ -876,7 +933,7 @@
             }
 
             // ============================================================
-            // 5. TOAST SYSTEM (unsend)
+            // 6. TOAST SYSTEM (unsend)
             // ============================================================
             const unsendToast = document.getElementById('unsendToast');
             const notificationToast = document.getElementById('notificationToast');
@@ -934,42 +991,6 @@
             });
 
             // ============================================================
-            // 6. LOAD reCAPTCHA ON PAGE LOAD (fast – same as archery)
-            // ============================================================
-            let recaptchaReady = false;
-
-            function loadRecaptcha() {
-                if (recaptchaReady) return;
-                if (typeof grecaptcha !== 'undefined' && grecaptcha.render) {
-                    recaptchaReady = true;
-                    const el = document.querySelector('.g-recaptcha');
-                    if (el && el.innerHTML === '') {
-                        const sitekey = el.getAttribute('data-sitekey');
-                        const isLight = document.body.classList.contains('light-theme');
-                        grecaptcha.render(el, { sitekey: sitekey, theme: isLight ? 'light' : 'dark' });
-                    }
-                    return;
-                }
-                window.recaptchaOnLoadCallback = function() {
-                    recaptchaReady = true;
-                    const el = document.querySelector('.g-recaptcha');
-                    if (el && el.innerHTML === '') {
-                        const sitekey = el.getAttribute('data-sitekey');
-                        const isLight = document.body.classList.contains('light-theme');
-                        grecaptcha.render(el, { sitekey: sitekey, theme: isLight ? 'light' : 'dark' });
-                    }
-                };
-                const script = document.createElement('script');
-                script.src = 'https://www.google.com/recaptcha/api.js?onload=recaptchaOnLoadCallback&render=explicit';
-                script.async = true;
-                script.defer = true;
-                document.head.appendChild(script);
-            }
-
-            // Load immediately (not lazy)
-            loadRecaptcha();
-
-            // ============================================================
             // 7. FORM SUBMISSION – NO CORS (form-urlencoded)
             // ============================================================
             const form = document.getElementById('contactForm');
@@ -993,14 +1014,14 @@
                         return;
                     }
 
-                    const captchaResponse = grecaptcha.getResponse();
+                    const captchaResponse = grecaptcha.getResponse(recaptchaWidgetId);
                     if (!captchaResponse) {
                         statusDiv.className = 'error';
                         statusDiv.textContent = '❌ Silakan centang "Saya bukan robot".';
                         return;
                     }
 
-                    // Build form-urlencoded payload (same as archery)
+                    // Build form-urlencoded payload
                     const formData = new FormData(form);
                     formData.append('g-recaptcha-response', captchaResponse);
                     const urlEncoded = new URLSearchParams(formData).toString();
@@ -1010,7 +1031,6 @@
                     submitText.textContent = 'Mengirim...';
                     submitSpinner.style.display = 'inline';
 
-                    // Send with form-urlencoded – NO CORS preflight
                     fetch(WEB_APP_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1028,7 +1048,7 @@
                         submitSpinner.style.display = 'none';
 
                         if (data.success) {
-                            grecaptcha.reset();
+                            grecaptcha.reset(recaptchaWidgetId);
                             statusDiv.className = 'success';
                             statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
 
@@ -1061,7 +1081,7 @@
                                 statusDiv.textContent = '';
                             }, 6000);
                         } else {
-                            grecaptcha.reset();
+                            grecaptcha.reset(recaptchaWidgetId);
                             statusDiv.className = 'error';
                             statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error: ' + (data.error || 'Terjadi kesalahan.');
                         }
@@ -1070,7 +1090,7 @@
                         submitBtn.disabled = false;
                         submitText.textContent = 'Kirim';
                         submitSpinner.style.display = 'none';
-                        grecaptcha.reset();
+                        grecaptcha.reset(recaptchaWidgetId);
                         statusDiv.className = 'error';
                         statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Gagal terhubung. Periksa koneksi dan coba lagi.';
                         console.error('Fetch error:', error);
@@ -1085,8 +1105,9 @@
                 if (unsendTimerId) { clearInterval(unsendTimerId); }
             });
 
-            console.log('💍 Zwageri & Lily – wedding wishes form ready (no CORS)');
+            console.log('💍 Zwageri & Lily – wedding wishes form ready (theme-aware reCAPTCHA)');
             console.log('📤 Web App URL:', WEB_APP_URL);
+
         })();
     </script>
 
