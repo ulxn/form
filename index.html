@@ -1163,12 +1163,11 @@
 
             // Send data to Google Sheets via Apps Script (form-urlencoded to avoid CORS)
             async function sendToSheet(name, rsvp, message, recaptchaToken, ip) {
-                if (!GOOGLE_SHEETS_API_URL || GOOGLE_SHEETS_API_URL === 'https://script.google.com/macros/s/AKfycbwceol5RTl762THc0xaxIOUJ9D2LFglIQf1DmqxJEFZ2exoE-AE7PxpbcgmikCOEpNiyw/exec') {
+                if (!GOOGLE_SHEETS_API_URL) {
                     console.warn('Google Sheets API URL not configured. Skipping sheet write.');
                     return { success: true, id: 'local_' + Date.now() };
                 }
 
-                // Build form-urlencoded payload
                 const params = new URLSearchParams();
                 params.append('name', name);
                 params.append('rsvp', rsvp);
