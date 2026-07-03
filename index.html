@@ -15,9 +15,9 @@
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" /></noscript>
 
     <!-- ============================================================
-    reCAPTCHA v3
+       reCAPTCHA v2
     ============================================================ -->
-    <script src="https://www.google.com/recaptcha/api.js?render=6LdLJUMtAAAAADkZ4LFCJe9mVYqAK_Z6Pb7N43_4"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
     <style>
         /* ============================================================
@@ -347,6 +347,28 @@
             color: var(--text-muted);
             margin-top: 2px;
             text-align: right;
+        }
+
+        /* ─── reCAPTCHA v2 widget ─── */
+        .recaptcha-wrapper {
+            display: flex;
+            justify-content: center;
+            margin: 8px 0 16px;
+            padding: 12px;
+            background: var(--bg-card-alt);
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            min-height: 80px;
+            align-items: center;
+        }
+        .recaptcha-wrapper .g-recaptcha {
+            transform: scale(0.95);
+            transform-origin: center;
+        }
+        @media (max-width: 480px) {
+            .recaptcha-wrapper .g-recaptcha {
+                transform: scale(0.85);
+            }
         }
 
         .btn {
@@ -757,6 +779,13 @@
                             <div id="msg-counter" class="counter">0 / 300</div>
                         </div>
 
+                        <!-- ========================================
+                        reCAPTCHA v2 widget
+                        ======================================== -->
+                        <div class="recaptcha-wrapper">
+                            <div class="g-recaptcha" data-sitekey="6LcQMEMtAAAAAB5C53tqVt0ghyZEyAQeipFIXcax"></div>
+                        </div>
+
                         <button type="submit" class="btn submit-btn" id="submitBtn">
                             <i class="fas fa-paper-plane" aria-hidden="true"></i>
                             <span id="submitText">Kirim</span>
@@ -814,8 +843,8 @@
             // ============================================================
             // 0. CONFIG
             // ============================================================
-            const GOOGLE_SHEETS_APP_URL = 'https://script.google.com/macros/s/AKfycbzm6hpA1BKElTDlGoCTrmaTtBJYHUby2fcaNbhTU9dn6o4wz35qXpWzHD_PzTNIjxWy/exec';
-            const RECAPTCHA_SITE_KEY = '6LdLJUMtAAAAADkZ4LFCJe9mVYqAK_Z6Pb7N43_4';
+            const GOOGLE_SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbwceol5RTl762THc0xaxIOUJ9D2LFglIQf1DmqxJEFZ2exoE-AE7PxpbcgmikCOEpNiyw/exec';
+            // No RECAPTCHA_SITE_KEY needed for v2 (it's in the data-sitekey attribute)
 
             // ============================================================
             // 1. THEME TOGGLE
@@ -1080,7 +1109,7 @@
             });
 
             // ============================================================
-            // 6. FORM SUBMISSION + reCAPTCHA + GOOGLE SHEETS
+            // 6. FORM SUBMISSION + reCAPTCHA v2 + GOOGLE SHEETS
             // ============================================================
             const form = document.getElementById('contactForm');
             const statusEl = document.getElementById('formStatus');
@@ -1102,6 +1131,10 @@
                 rsvpSelect.value = '';
                 msgInput.value = '';
                 counter.textContent = '0 / 300';
+                // Reset reCAPTCHA widget (optional)
+                if (typeof grecaptcha !== 'undefined') {
+                    grecaptcha.reset();
+                }
                 nameInput.focus();
             }
 
@@ -1130,7 +1163,7 @@
 
             // Send data to Google Sheets via Apps Script
             async function sendToSheet(name, rsvp, message, recaptchaToken, ip) {
-                if (!GOOGLE_SHEETS_API_URL || GOOGLE_SHEETS_API_URL === 'https://script.google.com/macros/s/AKfycbzm6hpA1BKElTDlGoCTrmaTtBJYHUby2fcaNbhTU9dn6o4wz35qXpWzHD_PzTNIjxWy/exec') {
+                if (!GOOGLE_SHEETS_API_URL || GOOGLE_SHEETS_API_URL === 'https://script.google.com/macros/s/AKfycbwceol5RTl762THc0xaxIOUJ9D2LFglIQf1DmqxJEFZ2exoE-AE7PxpbcgmikCOEpNiyw/exec') {
                     console.warn('Google Sheets API URL not configured. Skipping sheet write.');
                     return { success: true, id: 'local_' + Date.now() };
                 }
@@ -1140,7 +1173,7 @@
                     rsvp: rsvp,
                     message: message,
                     recaptchaToken: recaptchaToken,
-                    ip: ip || ''   // default to empty string if not provided
+                    ip: ip || ''
                 };
 
                 const response = await fetch(GOOGLE_SHEETS_API_URL, {
@@ -1163,7 +1196,7 @@
                 const rsvp = rsvpSelect.value;
                 const message = msgInput.value.trim();
 
-                // Validation
+                // ─── Validation ───
                 if (!name) {
                     showStatus('Mohon isi nama Anda.', 'error');
                     nameInput.focus();
@@ -1180,27 +1213,26 @@
                     return;
                 }
 
+                // ─── reCAPTCHA v2 check ───
+                if (typeof grecaptcha === 'undefined') {
+                    showStatus('❌ reCAPTCHA tidak dimuat. Muat ulang halaman.', 'error');
+                    return;
+                }
+                const recaptchaToken = grecaptcha.getResponse();
+                if (!recaptchaToken) {
+                    showStatus('❌ Silakan centang "Saya bukan robot".', 'error');
+                    return;
+                }
+
                 // Clear any previous status
                 showStatus('', '');
-
-                // Show loading state
                 setLoading(true);
 
                 try {
-                    // 1. Get reCAPTCHA token
-                    let recaptchaToken = '';
-                    try {
-                        recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'submit' });
-                    } catch (recaptchaError) {
-                        console.warn('reCAPTCHA failed:', recaptchaError);
-                        // Continue without reCAPTCHA if it fails (for development)
-                        // In production, you'd want to show an error
-                    }
-
-                    // 2. Get IP address
+                    // 1. Get IP address
                     const ip = await getIP();
 
-                    // 3. Send to Google Sheets
+                    // 2. Send to Google Sheets with the token
                     const result = await sendToSheet(name, rsvp, message, recaptchaToken, ip);
 
                     if (result && result.success) {
@@ -1231,10 +1263,15 @@
                     } else {
                         const errorMsg = (result && result.error) ? result.error : 'Gagal mengirim. Coba lagi.';
                         showStatus('❌ ' + errorMsg, 'error');
+                        // Reset reCAPTCHA so user can try again
+                        grecaptcha.reset();
                     }
                 } catch (error) {
                     console.error('Submission error:', error);
                     showStatus('❌ Terjadi kesalahan. Coba lagi.', 'error');
+                    if (typeof grecaptcha !== 'undefined') {
+                        grecaptcha.reset();
+                    }
                 } finally {
                     setLoading(false);
                 }
