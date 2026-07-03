@@ -812,7 +812,7 @@
             'use strict';
 
             // ============================================================
-            // 0. CONFIG — REPLACE WITH YOUR OWN VALUES
+            // 0. CONFIG
             // ============================================================
             const GOOGLE_SHEETS_APP_URL = 'https://script.google.com/macros/s/AKfycbzm6hpA1BKElTDlGoCTrmaTtBJYHUby2fcaNbhTU9dn6o4wz35qXpWzHD_PzTNIjxWy/exec';
             const RECAPTCHA_SITE_KEY = '6LdLJUMtAAAAADkZ4LFCJe9mVYqAK_Z6Pb7N43_4';
@@ -1130,7 +1130,7 @@
 
             // Send data to Google Sheets via Apps Script
             async function sendToSheet(name, rsvp, message, recaptchaToken, ip) {
-                if (!P|| P=== 'https://script.google.com/macros/s/AKfycbzm6hpA1BKElTDlGoCTrmaTtBJYHUby2fcaNbhTU9dn6o4wz35qXpWzHD_PzTNIjxWy/exec') {
+                if (!GOOGLE_SHEETS_API_URL || GOOGLE_SHEETS_API_URL === 'https://script.google.com/macros/s/AKfycbzm6hpA1BKElTDlGoCTrmaTtBJYHUby2fcaNbhTU9dn6o4wz35qXpWzHD_PzTNIjxWy/exec') {
                     console.warn('Google Sheets API URL not configured. Skipping sheet write.');
                     return { success: true, id: 'local_' + Date.now() };
                 }
@@ -1140,10 +1140,10 @@
                     rsvp: rsvp,
                     message: message,
                     recaptchaToken: recaptchaToken,
-                    ip: ip || ''
+                    ip: ip || ''   // default to empty string if not provided
                 };
 
-                const response = await fetch(P {
+                const response = await fetch(GOOGLE_SHEETS_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
