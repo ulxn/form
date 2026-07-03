@@ -16,7 +16,7 @@
 
     <style>
         /* ============================================================
-           RESET & BASE – same as your original wedding design
+           RESET & BASE
            ============================================================ */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
@@ -328,9 +328,10 @@
             box-shadow: var(--shadow-lg);
         }
         .btn:disabled {
-            opacity: 0.65;
+            opacity: 0.7;
             cursor: not-allowed;
             transform: none !important;
+            filter: grayscale(0.3);
         }
 
         #formStatus {
@@ -657,7 +658,7 @@
                             <div class="g-recaptcha" data-sitekey="6LcQMEMtAAAAAB5C53tqVt0ghyZEyAQeipFIXcax"></div>
                         </div>
 
-                        <button type="submit" class="btn submit-btn">
+                        <button type="submit" class="btn submit-btn" id="submitBtn">
                             <i class="fas fa-paper-plane" aria-hidden="true"></i>
                             <span id="submitText">Kirim</span>
                             <span id="submitSpinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
@@ -712,10 +713,10 @@
             // ============================================================
             // 0. CONFIG – REPLACE WITH YOUR VALUES
             // ============================================================
-            const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwceol5RTl762THc0xaxIOUJ9D2LFglIQf1DmqxJEFZ2exoE-AE7PxpbcgmikCOEpNiyw/exec'; // ← your Apps Script Web App URL
+            const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwceol5RTl762THc0xaxIOUJ9D2LFglIQf1DmqxJEFZ2exoE-AE7PxpbcgmikCOEpNiyw/exec'; // ← your Apps Script URL
 
             // ============================================================
-            // 1. THEME TOGGLE (unchanged)
+            // 1. THEME TOGGLE
             // ============================================================
             const themeToggle = document.getElementById('theme-toggle');
             const body = document.body;
@@ -741,9 +742,6 @@
                     widgets.forEach(function(el) {
                         const widgetId = grecaptcha.getWidgetIndex(el);
                         if (widgetId !== -1) {
-                            grecaptcha.reset(widgetId);
-                            // We can't change the theme dynamically, but we can re-render
-                            // by removing and re-adding the widget.
                             const sitekey = el.getAttribute('data-sitekey');
                             el.innerHTML = '';
                             grecaptcha.render(el, { sitekey: sitekey, theme: isLight ? 'light' : 'dark' });
@@ -753,7 +751,7 @@
             });
 
             // ============================================================
-            // 2. MESSAGE STORE (localStorage) – unchanged
+            // 2. MESSAGE STORE (localStorage)
             // ============================================================
             const STORAGE_KEY = 'zw_messages';
             const PAGE_SIZE = 5;
@@ -791,7 +789,7 @@
             let allMessages = loadMessages();
 
             // ============================================================
-            // 3. RENDER MESSAGES (unchanged)
+            // 3. RENDER MESSAGES
             // ============================================================
             let currentPage = 1;
 
@@ -878,7 +876,7 @@
             }
 
             // ============================================================
-            // 5. TOAST SYSTEM (unsend) – unchanged
+            // 5. TOAST SYSTEM (unsend)
             // ============================================================
             const unsendToast = document.getElementById('unsendToast');
             const notificationToast = document.getElementById('notificationToast');
@@ -936,18 +934,22 @@
             });
 
             // ============================================================
-            // 6. LAZY LOAD reCAPTCHA (same as Archery code)
+            // 6. LOAD reCAPTCHA ON PAGE LOAD (fast – same as archery)
             // ============================================================
-            let recaptchaLoading = false;
             let recaptchaReady = false;
 
-            function loadRecaptcha(callback) {
-                if (recaptchaReady) { if (callback) callback(); return; }
-                if (recaptchaLoading) {
-                    if (callback) window.addEventListener('recaptcha-ready', callback, { once: true });
+            function loadRecaptcha() {
+                if (recaptchaReady) return;
+                if (typeof grecaptcha !== 'undefined' && grecaptcha.render) {
+                    recaptchaReady = true;
+                    const el = document.querySelector('.g-recaptcha');
+                    if (el && el.innerHTML === '') {
+                        const sitekey = el.getAttribute('data-sitekey');
+                        const isLight = document.body.classList.contains('light-theme');
+                        grecaptcha.render(el, { sitekey: sitekey, theme: isLight ? 'light' : 'dark' });
+                    }
                     return;
                 }
-                recaptchaLoading = true;
                 window.recaptchaOnLoadCallback = function() {
                     recaptchaReady = true;
                     const el = document.querySelector('.g-recaptcha');
@@ -956,8 +958,6 @@
                         const isLight = document.body.classList.contains('light-theme');
                         grecaptcha.render(el, { sitekey: sitekey, theme: isLight ? 'light' : 'dark' });
                     }
-                    window.dispatchEvent(new Event('recaptcha-ready'));
-                    if (callback) callback();
                 };
                 const script = document.createElement('script');
                 script.src = 'https://www.google.com/recaptcha/api.js?onload=recaptchaOnLoadCallback&render=explicit';
@@ -966,25 +966,15 @@
                 document.head.appendChild(script);
             }
 
-            const contactSection = document.getElementById('contactForm').closest('section') || document.getElementById('contact');
-            if (contactSection) {
-                const recaptchaObserver = new IntersectionObserver(function(entries) {
-                    entries.forEach(function(entry) {
-                        if (entry.isIntersecting) {
-                            loadRecaptcha();
-                            recaptchaObserver.disconnect();
-                        }
-                    });
-                }, { rootMargin: '600px 0px' });
-                recaptchaObserver.observe(contactSection);
-            }
+            // Load immediately (not lazy)
+            loadRecaptcha();
 
             // ============================================================
-            // 7. FORM SUBMISSION (exact same method as Archery)
+            // 7. FORM SUBMISSION – NO CORS (form-urlencoded)
             // ============================================================
             const form = document.getElementById('contactForm');
             const statusDiv = document.getElementById('formStatus');
-            const submitBtn = form.querySelector('.submit-btn');
+            const submitBtn = document.getElementById('submitBtn');
             const submitText = document.getElementById('submitText');
             const submitSpinner = document.getElementById('submitSpinner');
 
@@ -992,7 +982,6 @@
                 form.addEventListener('submit', function(e) {
                     e.preventDefault();
 
-                    // Reset status
                     statusDiv.className = '';
                     statusDiv.textContent = '';
 
@@ -1000,7 +989,7 @@
                     if (typeof grecaptcha === 'undefined' || !recaptchaReady) {
                         loadRecaptcha();
                         statusDiv.className = 'error';
-                        statusDiv.textContent = '⚠️ Verifikasi sedang dimuat, coba lagi sebentar.';
+                        statusDiv.textContent = '⏳ Verifikasi sedang dimuat, tunggu sebentar...';
                         return;
                     }
 
@@ -1011,7 +1000,7 @@
                         return;
                     }
 
-                    // Gather form data
+                    // Build form-urlencoded payload (same as archery)
                     const formData = new FormData(form);
                     formData.append('g-recaptcha-response', captchaResponse);
                     const urlEncoded = new URLSearchParams(formData).toString();
@@ -1021,13 +1010,19 @@
                     submitText.textContent = 'Mengirim...';
                     submitSpinner.style.display = 'inline';
 
+                    // Send with form-urlencoded – NO CORS preflight
                     fetch(WEB_APP_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: urlEncoded,
                     })
-                    .then(response => response.json())
-                    .then(data => {
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error('Server error: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(function(data) {
                         submitBtn.disabled = false;
                         submitText.textContent = 'Kirim';
                         submitSpinner.style.display = 'none';
@@ -1077,7 +1072,7 @@
                         submitSpinner.style.display = 'none';
                         grecaptcha.reset();
                         statusDiv.className = 'error';
-                        statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Gagal terhubung. Coba lagi.';
+                        statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Gagal terhubung. Periksa koneksi dan coba lagi.';
                         console.error('Fetch error:', error);
                     });
                 });
@@ -1090,7 +1085,7 @@
                 if (unsendTimerId) { clearInterval(unsendTimerId); }
             });
 
-            console.log('💍 Zwageri & Lily – wedding wishes form ready.');
+            console.log('💍 Zwageri & Lily – wedding wishes form ready (no CORS)');
             console.log('📤 Web App URL:', WEB_APP_URL);
         })();
     </script>
