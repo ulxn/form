@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
+    <title>ZW - Wishes &amp; RSVP</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Cormorant+Garamond:wght@500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Cormorant+Garamond:wght@500;600;700&display=swap" /></noscript>
+
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" /></noscript>
+
+    <!-- ============================================================
+    reCAPTCHA v3
+    ============================================================ -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6LdLJUMtAAAAADkZ4LFCJe9mVYqAK_Z6Pb7N43_4"></script>
+
+    <style>
+        /* ============================================================
+           RESET & BASE
+           ============================================================ */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+
+        :root {
+            --l-100: #FBEFEF;
+            --l-200: #FFE2E2;
+            --l-300: #F5CBCB;
+            --l-400: #C5B3D3;
+
+            --d-100: #F4ABC4;
+            --d-200: #595B83;
+            --d-300: #333456;
+            --d-400: #060930;
+
+            --bg-page: var(--l-100);
+            --bg-card: #ffffff;
+            --bg-card-alt: var(--l-100);
+            --bg-input: #ffffff;
+            --accent: var(--l-400);
+            --accent-strong: var(--d-300);
+            --accent-contrast: #ffffff;
+            --text-primary: #3a2c3c;
+            --text-secondary: #6f5f6f;
+            --text-muted: #9c8b9c;
+            --border-subtle: var(--l-300);
+            --shadow: 0 8px 32px rgba(160, 140, 175, 0.30);
+            --shadow-lg: 0 12px 48px rgba(160, 140, 175, 0.25);
+            --placeholder-color: #b7a6b7;
+            --chip-hadir-bg: rgba(120, 168, 130, 0.15);
+            --chip-hadir-fg: #6b9274;
+            --chip-belum-bg: rgba(197, 91, 91, 0.12);
+            --chip-belum-fg: #b27777;
+            --success-bg: rgba(107, 168, 120, 0.12);
+            --success-fg: #3f7d4c;
+            --error-bg: rgba(224, 96, 96, 0.10);
+            --error-fg: #c24747;
+            --card-radius: 20px;
+            --toast-bg: #ffffff;
+            --toast-text: #3a2c3c;
+            --toast-shadow: 0 8px 32px rgba(160, 140, 175, 0.35);
+        }
+
+        body.dark-theme {
+            --bg-page: var(--d-400);
+            --bg-card: var(--d-300);
+            --bg-card-alt: #2a2b4a;
+            --bg-input: #23244080;
+            --accent: var(--d-100);
+            --accent-strong: var(--d-100);
+            --accent-contrast: #2a1220;
+            --text-primary: #f5eef2;
+            --text-secondary: #cfc9de;
+            --text-muted: #9c96b8;
+            --border-subtle: #46477a;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+            --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.60);
+            --placeholder-color: #7d789e;
+            --chip-hadir-bg: rgba(244, 171, 196, 0.18);
+            --chip-hadir-fg: #f4abc4;
+            --chip-belum-bg: rgba(89, 91, 131, 0.4);
+            --chip-belum-fg: #cfc9de;
+            --success-bg: rgba(244, 171, 196, 0.14);
+            --success-fg: #f4abc4;
+            --error-bg: rgba(224, 96, 96, 0.14);
+            --error-fg: #ff9d9d;
+            --toast-bg: var(--d-300);
+            --toast-text: #f5eef2;
+            --toast-shadow: 0 8px 32px rgba(0, 0, 0, 0.60);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            transition: background 0.4s, color 0.4s;
+        }
+        * {
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        h1,
+        h2,
+        h3 {
+            font-family: 'Cormorant Garamond', serif;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 10px;
+        }
+
+        /* Intro animation */
+        @keyframes introFade {
+            0% {
+                opacity: 0;
+                transform: translateY(24px) scale(0.98);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .page-wrap {
+            animation: introFade 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* ============================================================
+           TOP BAR
+           ============================================================ */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px clamp(16px, 4vw, 48px);
+            background: transparent;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .topbar .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: 0.5px;
+            color: var(--accent-strong);
+        }
+        .topbar .brand i {
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+        #theme-toggle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            cursor: pointer;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.3s;
+        }
+        #theme-toggle:hover {
+            color: var(--accent-strong);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        #theme-toggle .toggle-label {
+            display: none;
+        }
+
+        /* ============================================================
+           LAYOUT
+           ============================================================ */
+        .page-wrap {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: clamp(16px, 3vw, 36px) clamp(16px, 4vw, 48px) 60px;
+        }
+        .hero {
+            text-align: center;
+            max-width: 560px;
+            margin: 0 auto clamp(20px, 4vw, 36px);
+        }
+        .hero h1 {
+            font-size: clamp(1.6rem, 4.5vw, 2.6rem);
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: clamp(16px, 2.5vw, 24px);
+            align-items: stretch;
+        }
+        .form-col {
+            flex: 1 1 360px;
+        }
+        .messages-col {
+            flex: 1 1 360px;
+            min-width: 260px;
+            display: flex;
+            flex-direction: column;
+        }
+        @media (min-width: 900px) {
+            .form-col,
+            .messages-col {
+                flex: 1 1 0;
+            }
+            .form-col {
+                order: 2;
+            }
+            .messages-col {
+                order: 1;
+            }
+        }
+
+        /* ============================================================
+           CARDS
+           ============================================================ */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--card-radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            transition: box-shadow 0.3s;
+        }
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* ============================================================
+           FORM CARD
+           ============================================================ */
+        .form-card {
+            padding: clamp(24px, 4vw, 40px);
+        }
+        .form-header {
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .form-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        .form-header h2 span {
+            color: var(--accent-strong);
+        }
+        .form-header p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .field {
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1.5px solid var(--border-subtle);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            width: 100%;
+            appearance: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(197, 179, 211, 0.20);
+        }
+        body.dark-theme .field:focus {
+            box-shadow: 0 0 0 4px rgba(244, 171, 196, 0.15);
+        }
+        .field::placeholder {
+            color: var(--placeholder-color);
+            font-size: 0.85rem;
+        }
+        #form-message::placeholder {
+            font-style: italic;
+        }
+        .select-wrap {
+            position: relative;
+        }
+        .select-wrap i {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+            font-size: 0.8rem;
+        }
+        textarea.field {
+            min-height: 110px;
+            max-height: 110px;
+        }
+        .counter {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            text-align: right;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            border: none;
+            background: var(--accent-strong);
+            color: var(--accent-contrast);
+            box-shadow: var(--shadow);
+            width: 100%;
+            justify-content: center;
+            transition: transform 0.2s, filter 0.2s, box-shadow 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.06);
+            box-shadow: var(--shadow-lg);
+        }
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        #formStatus {
+            display: none;
+            text-align: center;
+            padding: 10px 14px;
+            margin-top: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        #formStatus.error {
+            display: block;
+            background: var(--error-bg);
+            color: var(--error-fg);
+            border: 1px solid currentColor;
+        }
+
+        /* ============================================================
+           MESSAGES CARD
+           ============================================================ */
+        .messages-card {
+            padding: clamp(18px, 2.8vw, 30px);
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        .messages-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            margin-bottom: 14px;
+        }
+        .messages-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            scroll-margin-top: 10px;
+            margin-left: 0.5rem;
+        }
+        .messages-header h2 i {
+            color: var(--accent);
+        }
+        .messages-count {
+            display: none;
+        }
+
+        .message-list-wrap {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 4px;
+            margin-right: -4px;
+        }
+        .message-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 100%;
+        }
+        .message-item {
+            background: var(--bg-card-alt);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 14px 16px;
+            opacity: 0;
+            animation: fadeIn 0.35s ease forwards;
+            flex-shrink: 0;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .message-item-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .message-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            min-width: 0;
+        }
+        .message-name span {
+            word-break: break-word;
+        }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: #fff;
+            background: var(--accent);
+            overflow: hidden;
+        }
+        .avatar.hadir {
+            background: var(--chip-hadir-fg);
+        }
+        .avatar.belum {
+            background: var(--chip-belum-fg);
+        }
+        .avatar i {
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+        }
+
+        .message-text {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 6px;
+            word-break: break-word;
+        }
+        .message-time {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 32px 10px;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+        .empty-state i {
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+            display: block;
+            color: var(--accent);
+        }
+
+        /* ============================================================
+           PAGINATION
+           ============================================================ */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 14px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            min-width: 44px;
+            height: 44px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-subtle);
+            background: var(--bg-card-alt);
+            color: var(--text-secondary);
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.2s, color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.15s;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .page-btn:active {
+            transform: scale(0.94);
+        }
+        .page-btn:hover:not(:disabled) {
+            border-color: var(--accent-strong);
+            color: var(--accent-strong);
+            box-shadow: var(--shadow);
+        }
+        .page-btn.active {
+            background: var(--accent-strong);
+            color: var(--accent-contrast);
+            border-color: var(--accent-strong);
+        }
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        @media (max-width: 600px) {
+            .page-btn {
+                min-width: 48px;
+                height: 48px;
+                padding: 0 16px;
+                font-size: 1rem;
+                border-radius: 14px;
+            }
+            .pagination {
+                gap: 10px;
+            }
+        }
+
+        /* ============================================================
+           TOASTS
+           ============================================================ */
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none;
+            width: 100%;
+            max-width: 90vw;
+        }
+        .toast {
+            background: var(--toast-bg);
+            color: var(--toast-text);
+            padding: 12px 24px;
+            border-radius: 16px;
+            box-shadow: var(--toast-shadow);
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            pointer-events: auto;
+            font-size: 0.9rem;
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            flex-wrap: wrap;
+            justify-content: center;
+            width: auto;
+            min-width: 200px;
+            max-width: 100%;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        .toast .toast-msg {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toast .toast-msg i {
+            color: var(--accent);
+        }
+        .toast .toast-timer {
+            font-weight: 700;
+            color: var(--accent-strong);
+            min-width: 24px;
+            text-align: center;
+        }
+        .toast .toast-btn {
+            background: var(--error-bg);
+            color: var(--error-fg);
+            border: 1px solid currentColor;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            pointer-events: auto;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .toast .toast-btn:active {
+            transform: scale(0.94);
+        }
+        .toast .toast-btn:hover {
+            transform: scale(1.05);
+            background: var(--error-bg);
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 480px) {
+            .topbar {
+                padding: 12px 14px;
+            }
+            .form-card,
+            .messages-card {
+                padding: 18px 14px;
+            }
+            .hero h1 {
+                font-size: 1.5rem;
+            }
+            .messages-header h2 {
+                font-size: 1.2rem;
+            }
+            .toast-container {
+                bottom: 16px;
+                max-width: 92vw;
+            }
+            .toast {
+                padding: 10px 16px;
+                font-size: 0.82rem;
+                width: 100%;
+            }
+        }
+        @media (max-width: 400px) {
+            .message-item-top {
+                flex-wrap: wrap;
+            }
+            .message-name {
+                flex: 1 1 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="topbar">
+        <div class="brand">Zwageri <i class="fas fa-heart" aria-hidden="true"></i> Lily</div>
+        <button id="theme-toggle" aria-label="Toggle theme">
+            <i class="fas fa-moon" aria-hidden="true"></i>
+            <span class="toggle-label">Dark</span>
+        </button>
+    </header>
+
+    <main class="page-wrap">
+        <div class="hero">
+            <h1>Bagikan Ucapan &amp; Doa Terbaikmu</h1>
+        </div>
+
+        <div class="grid">
+
+            <section class="form-col">
+                <div class="card form-card">
+                    <div class="form-header">
+                        <h2>Send your <span>Wish</span></h2>
+                        <p>Ucapan dan doa terbaik untuk Zwageri dan Lily</p>
+                    </div>
+
+                    <form id="contactForm" novalidate>
+                        <div class="form-group">
+                            <label for="form-name">Nama</label>
+                            <input type="text" id="form-name" name="name" class="field" placeholder="John Doe" required maxlength="20" autocomplete="off" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rsvp">RSVP</label>
+                            <div class="select-wrap">
+                                <select id="rsvp" name="rsvp" class="field" required>
+                                    <option value="" disabled selected>— Rencana Kehadiran —</option>
+                                    <option value="Hadir">Insyaa Allah Hadir</option>
+                                    <option value="Belum dapat Hadir">Belum dapat Hadir</option>
+                                </select>
+                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="form-message">Pesan</label>
+                            <textarea id="form-message" name="message" class="field" placeholder="Barakallahu lakuma wa baraka 'alaikuma wa jama'a bainakuma fii khair~" required maxlength="300"></textarea>
+                            <div id="msg-counter" class="counter">0 / 300</div>
+                        </div>
+
+                        <button type="submit" class="btn submit-btn" id="submitBtn">
+                            <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                            <span id="submitText">Kirim</span>
+                            <span id="submitSpinner" style="display:none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                        </button>
+                    </form>
+
+                    <div id="formStatus"></div>
+                </div>
+            </section>
+
+            <section class="messages-col">
+                <div class="card messages-card">
+                    <div class="messages-header" id="messages-header">
+                        <h2 id="messages-title"><i class="fas fa-envelope"></i> Wishes</h2>
+                        <span class="messages-count" id="messages-count">0 pesan</span>
+                    </div>
+
+                    <div class="message-list-wrap" id="message-list-wrap">
+                        <div class="message-list" id="message-list"></div>
+                    </div>
+
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toastContainer">
+        <div class="toast" id="unsendToast">
+            <div class="toast-msg">
+                <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                <span>Pesan terkirim</span>
+            </div>
+            <span class="toast-timer" id="toastTimer">20</span>
+            <span>s</span>
+            <button class="toast-btn" id="unsendBtn">Batalkan</button>
+        </div>
+        <div class="toast" id="notificationToast">
+            <div class="toast-msg">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                <span id="notificationText">Notifikasi</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================================
+            // 0. CONFIG — REPLACE WITH YOUR OWN VALUES
+            // ============================================================
+            const GOOGLE_SHEETS_APP_URL = 'https://script.google.com/macros/s/AKfycbzm6hpA1BKElTDlGoCTrmaTtBJYHUby2fcaNbhTU9dn6o4wz35qXpWzHD_PzTNIjxWy/exec';
+            const RECAPTCHA_SITE_KEY = '6LdLJUMtAAAAADkZ4LFCJe9mVYqAK_Z6Pb7N43_4';
+
+            // ============================================================
+            // 1. THEME TOGGLE
+            // ============================================================
+            const themeToggle = document.getElementById('theme-toggle');
+            const body = document.body;
+            const icon = themeToggle.querySelector('i');
+
+            function applyTheme(theme) {
+                const isDark = theme === 'dark';
+                body.classList.toggle('dark-theme', isDark);
+                icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            }
+
+            let currentTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(currentTheme);
+
+            themeToggle.addEventListener('click', function() {
+                currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                localStorage.setItem('theme', currentTheme);
+                applyTheme(currentTheme);
+            });
+
+            // ============================================================
+            // 2. MESSAGE STORE (localStorage)
+            // ============================================================
+            const STORAGE_KEY = 'zw_messages';
+            const PAGE_SIZE = 5;
+
+            const defaultMessages = [
+                { name: 'Ahmad Fauzi', rsvp: 'Hadir', message: 'Selamat menempuh hidup baru! Semoga menjadi keluarga yang sakinah, mawaddah, warahmah.',
+                    time: '2 jam lalu' },
+                { name: 'Siti Rahma', rsvp: 'Hadir', message: 'Bahagia sekali melihat kalian bersatu. Sukses selalu untuk kalian berdua!',
+                    time: '5 jam lalu' },
+                { name: 'Budi Santoso', rsvp: 'Belum dapat Hadir',
+                    message: 'Mohon maaf tidak bisa hadir, tapi doa terbaik selalu menyertai kalian berdua.',
+                    time: '1 hari lalu' },
+                { name: 'Dewi Lestari', rsvp: 'Hadir', message: 'Barakallahu lakuma wa baraka alaikuma. Selamat menempuh hidup baru!',
+                    time: '1 hari lalu' },
+                { name: 'Rangga Pratama', rsvp: 'Hadir', message: 'Semoga menjadi pasangan yang saling melengkapi selamanya. Congrats!',
+                    time: '2 hari lalu' },
+                { name: 'Nadia Putri', rsvp: 'Hadir', message: 'So happy for both of you! Wishing you a lifetime of love and happiness.',
+                    time: '2 hari lalu' },
+                { name: 'Fajar Hidayat', rsvp: 'Belum dapat Hadir',
+                    message: 'Selamat ya! Maaf banget gak bisa dateng, ada acara keluarga di luar kota.',
+                    time: '3 hari lalu' },
+                { name: 'Intan Permata', rsvp: 'Hadir', message: 'Akhirnya hari ini datang juga! Selamat menempuh hidup baru, semoga langgeng.',
+                    time: '4 hari lalu' },
+                { name: 'Yoga Saputra', rsvp: 'Hadir', message: 'Selamat menikah! Semoga rumah tangga kalian dipenuhi cinta dan kebahagiaan.',
+                    time: '5 hari lalu' },
+                { name: 'Clara Amelia', rsvp: 'Hadir',
+                    message: 'Happy wedding day! Semoga selalu bahagia dan diberkahi hingga akhir hayat.',
+                    time: '6 hari lalu' },
+                { name: 'Reza Maulana', rsvp: 'Belum dapat Hadir',
+                    message: 'Doa terbaik untuk kalian, semoga pernikahannya lancar dan penuh berkah.',
+                    time: '1 minggu lalu' }
+            ];
+
+            function loadMessages() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed) && parsed.length) {
+                            return parsed;
+                        }
+                    }
+                } catch (_) { /* ignore */ }
+                saveMessages(defaultMessages);
+                return defaultMessages.slice();
+            }
+
+            function saveMessages(messages) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+                } catch (_) { /* ignore */ }
+            }
+
+            let allMessages = loadMessages();
+
+            // ============================================================
+            // 3. RENDER MESSAGES + PAGINATION
+            // ============================================================
+            let currentPage = 1;
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            function getRelativeTime() {
+                return 'Baru saja';
+            }
+
+            function renderMessages(page) {
+                const listEl = document.getElementById('message-list');
+                const countEl = document.getElementById('messages-count');
+                const total = allMessages.length;
+
+                countEl.textContent = total + (total === 1 ? ' pesan' : ' pesan');
+
+                if (total === 0) {
+                    listEl.innerHTML =
+                        '<div class="empty-state"><i class="fas fa-envelope-open-text" aria-hidden="true"></i>Belum ada ucapan. Jadilah yang pertama!</div>';
+                    document.getElementById('pagination').innerHTML = '';
+                    return;
+                }
+
+                const totalPages = Math.ceil(total / PAGE_SIZE);
+                if (page < 1) page = 1;
+                if (page > totalPages) page = totalPages;
+                currentPage = page;
+
+                const start = (page - 1) * PAGE_SIZE;
+                const pageItems = allMessages.slice(start, start + PAGE_SIZE);
+
+                listEl.innerHTML = pageItems.map(function(m, i) {
+                    const displayTime = m.time || getRelativeTime();
+                    const rsvpClass = m.rsvp === 'Hadir' ? 'hadir' : 'belum';
+                    return (
+                        '<div class="message-item" style="animation-delay:' + (i * 0.05) + 's">' +
+                        '<div class="message-item-top">' +
+                        '<div class="message-name">' +
+                        '<div class="avatar ' + rsvpClass + '"><i class="fas fa-user"></i></div>' +
+                        '<span>' + escapeHtml(m.name) + '</span>' +
+                        '</div>' +
+                        '</div>' +
+                        '<p class="message-text">' + escapeHtml(m.message) + '</p>' +
+                        '<div class="message-time"><i class="far fa-clock" aria-hidden="true"></i>' + escapeHtml(
+                            displayTime) + '</div>' +
+                        '</div>'
+                    );
+                }).join('');
+
+                renderPagination(page, totalPages);
+            }
+
+            function renderPagination(page, totalPages) {
+                const pagEl = document.getElementById('pagination');
+                if (totalPages <= 1) { pagEl.innerHTML = ''; return; }
+
+                let html = '';
+                html += '<button class="page-btn" data-page="' + (page - 1) + '" ' + (page === 1 ? 'disabled' : '') +
+                    ' aria-label="Previous page"><i class="fas fa-chevron-left"></i></button>';
+
+                for (let p = 1; p <= totalPages; p++) {
+                    html += '<button class="page-btn' + (p === page ? ' active' : '') + '" data-page="' + p + '">' + p +
+                        '</button>';
+                }
+
+                html += '<button class="page-btn" data-page="' + (page + 1) + '" ' + (page === totalPages ? 'disabled' : '') +
+                    ' aria-label="Next page"><i class="fas fa-chevron-right"></i></button>';
+
+                pagEl.innerHTML = html;
+
+                pagEl.querySelectorAll('.page-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        const p = parseInt(btn.getAttribute('data-page'), 10);
+                        const total = Math.ceil(allMessages.length / PAGE_SIZE);
+                        if (!isNaN(p) && p >= 1 && p <= total) {
+                            currentPage = p;
+                            renderMessages(currentPage);
+                            const titleEl = document.getElementById('messages-title');
+                            if (titleEl) {
+                                titleEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        }
+                    });
+                });
+            }
+
+            renderMessages(1);
+
+            // ============================================================
+            // 4. TEXTAREA COUNTER
+            // ============================================================
+            const msg = document.getElementById('form-message');
+            const counter = document.getElementById('msg-counter');
+            if (msg && counter) {
+                counter.textContent = '0 / 300';
+                msg.addEventListener('input', function() {
+                    counter.textContent = this.value.length + ' / 300';
+                });
+            }
+
+            // ============================================================
+            // 5. TOAST SYSTEM
+            // ============================================================
+            const unsendToast = document.getElementById('unsendToast');
+            const notificationToast = document.getElementById('notificationToast');
+            const notificationText = document.getElementById('notificationText');
+            const toastTimer = document.getElementById('toastTimer');
+            const unsendBtn = document.getElementById('unsendBtn');
+
+            let unsendTimerId = null;
+            let unsendCountdown = 20;
+            let pendingMessageId = null;
+            let notificationTimeout = null;
+
+            function showToast(toastEl) {
+                toastEl.classList.add('show');
+            }
+
+            function hideToast(toastEl) {
+                toastEl.classList.remove('show');
+            }
+
+            function showNotification(message, duration) {
+                duration = duration || 3000;
+                notificationText.textContent = message;
+                showToast(notificationToast);
+                if (notificationTimeout) clearTimeout(notificationTimeout);
+                notificationTimeout = setTimeout(function() {
+                    hideToast(notificationToast);
+                }, duration);
+            }
+
+            function startUnsendTimer(messageId) {
+                if (unsendTimerId) {
+                    clearInterval(unsendTimerId);
+                    unsendTimerId = null;
+                }
+                hideToast(notificationToast);
+                unsendCountdown = 20;
+                toastTimer.textContent = unsendCountdown;
+                pendingMessageId = messageId;
+                showToast(unsendToast);
+
+                unsendTimerId = setInterval(function() {
+                    unsendCountdown -= 1;
+                    toastTimer.textContent = unsendCountdown;
+                    if (unsendCountdown <= 0) {
+                        hideToast(unsendToast);
+                        clearInterval(unsendTimerId);
+                        unsendTimerId = null;
+                        pendingMessageId = null;
+                    }
+                }, 1000);
+            }
+
+            unsendBtn.addEventListener('click', function() {
+                if (pendingMessageId === null) return;
+
+                const index = allMessages.findIndex(function(m) {
+                    return m._id === pendingMessageId;
+                });
+                if (index !== -1) {
+                    allMessages.splice(index, 1);
+                    saveMessages(allMessages);
+                    renderMessages(currentPage);
+                }
+
+                hideToast(unsendToast);
+                if (unsendTimerId) {
+                    clearInterval(unsendTimerId);
+                    unsendTimerId = null;
+                }
+                pendingMessageId = null;
+
+                showNotification('↩ Pesan batal dikirimkan.', 3000);
+            });
+
+            // ============================================================
+            // 6. FORM SUBMISSION + reCAPTCHA + GOOGLE SHEETS
+            // ============================================================
+            const form = document.getElementById('contactForm');
+            const statusEl = document.getElementById('formStatus');
+            const nameInput = document.getElementById('form-name');
+            const rsvpSelect = document.getElementById('rsvp');
+            const msgInput = document.getElementById('form-message');
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const submitSpinner = document.getElementById('submitSpinner');
+
+            function showStatus(msg, type) {
+                statusEl.textContent = msg;
+                statusEl.className = type || '';
+                statusEl.style.display = type ? 'block' : 'none';
+            }
+
+            function resetForm() {
+                nameInput.value = '';
+                rsvpSelect.value = '';
+                msgInput.value = '';
+                counter.textContent = '0 / 300';
+                nameInput.focus();
+            }
+
+            function setLoading(loading) {
+                if (loading) {
+                    submitBtn.disabled = true;
+                    submitText.textContent = 'Mengirim...';
+                    submitSpinner.style.display = 'inline';
+                } else {
+                    submitBtn.disabled = false;
+                    submitText.textContent = 'Kirim';
+                    submitSpinner.style.display = 'none';
+                }
+            }
+
+            // Get user's IP address using ipify
+            function getIP() {
+                return fetch('https://api.ipify.org?format=json')
+                    .then(res => {
+                        if (!res.ok) throw new Error('IP fetch failed');
+                        return res.json();
+                    })
+                    .then(data => data.ip)
+                    .catch(() => '');
+            }
+
+            // Send data to Google Sheets via Apps Script
+            async function sendToSheet(name, rsvp, message, recaptchaToken, ip) {
+                if (!P|| P=== 'https://script.google.com/macros/s/AKfycbzm6hpA1BKElTDlGoCTrmaTtBJYHUby2fcaNbhTU9dn6o4wz35qXpWzHD_PzTNIjxWy/exec') {
+                    console.warn('Google Sheets API URL not configured. Skipping sheet write.');
+                    return { success: true, id: 'local_' + Date.now() };
+                }
+
+                const payload = {
+                    name: name,
+                    rsvp: rsvp,
+                    message: message,
+                    recaptchaToken: recaptchaToken,
+                    ip: ip || ''
+                };
+
+                const response = await fetch(P {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+
+                return response.json();
+            }
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const name = nameInput.value.trim();
+                const rsvp = rsvpSelect.value;
+                const message = msgInput.value.trim();
+
+                // Validation
+                if (!name) {
+                    showStatus('Mohon isi nama Anda.', 'error');
+                    nameInput.focus();
+                    return;
+                }
+                if (!rsvp) {
+                    showStatus('Silakan pilih rencana kehadiran.', 'error');
+                    rsvpSelect.focus();
+                    return;
+                }
+                if (!message) {
+                    showStatus('Mohon isi pesan ucapan Anda.', 'error');
+                    msgInput.focus();
+                    return;
+                }
+
+                // Clear any previous status
+                showStatus('', '');
+
+                // Show loading state
+                setLoading(true);
+
+                try {
+                    // 1. Get reCAPTCHA token
+                    let recaptchaToken = '';
+                    try {
+                        recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'submit' });
+                    } catch (recaptchaError) {
+                        console.warn('reCAPTCHA failed:', recaptchaError);
+                        // Continue without reCAPTCHA if it fails (for development)
+                        // In production, you'd want to show an error
+                    }
+
+                    // 2. Get IP address
+                    const ip = await getIP();
+
+                    // 3. Send to Google Sheets
+                    const result = await sendToSheet(name, rsvp, message, recaptchaToken, ip);
+
+                    if (result && result.success) {
+                        // Create local message
+                        const messageId = result.id || (Date.now() + '_' + Math.random().toString(36).slice(2, 6));
+
+                        const newMsg = {
+                            _id: messageId,
+                            name: name,
+                            rsvp: rsvp,
+                            message: message,
+                            time: getRelativeTime()
+                        };
+
+                        allMessages.unshift(newMsg);
+                        saveMessages(allMessages);
+                        currentPage = 1;
+                        renderMessages(currentPage);
+
+                        const titleEl = document.getElementById('messages-title');
+                        if (titleEl) {
+                            titleEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+
+                        resetForm();
+                        startUnsendTimer(messageId);
+                        showStatus('', '');
+                    } else {
+                        const errorMsg = (result && result.error) ? result.error : 'Gagal mengirim. Coba lagi.';
+                        showStatus('❌ ' + errorMsg, 'error');
+                    }
+                } catch (error) {
+                    console.error('Submission error:', error);
+                    showStatus('❌ Terjadi kesalahan. Coba lagi.', 'error');
+                } finally {
+                    setLoading(false);
+                }
+            });
+
+            // ============================================================
+            // 7. CLEANUP
+            // ============================================================
+            window.addEventListener('beforeunload', function() {
+                if (unsendTimerId) {
+                    clearInterval(unsendTimerId);
+                    unsendTimerId = null;
+                }
+            });
+
+        })();
+    </script>
+
+</body>
+</html>
