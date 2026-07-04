@@ -10,6 +10,8 @@
  *   - Pending messages are stored and retried on page reload
  *   - No polling – quota efficient
  *   - Improved error handling: if fetch fails, shows empty state
+ *   - FIXED: duplicate "Mengirim" after refresh – pending message is
+ *     properly removed and ID updated on successful send.
  * ============================================================
  */
 
@@ -585,7 +587,7 @@
     }
 
     // ============================================================
-    // 9. SEND MESSAGE TO SERVER (with retry support)
+    // 9. SEND MESSAGE TO SERVER (with retry support) – FIXED
     // ============================================================
 
     function sendMessageToServer(msg, isRetry) {
@@ -626,9 +628,15 @@
                 if (index !== -1) {
                     allMessages[index].status = 'sent';
                     if (data.id) {
+                        // Update the ID to the server‑generated one
                         allMessages[index]._id = data.id;
                     }
+                    // Remove from pending storage (using the original _id)
                     removePendingMessage(msg._id);
+                    // Save the updated list to localStorage with the new ID
+                    try {
+                        localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(allMessages));
+                    } catch (_) {}
                 }
                 renderMessages(currentPage);
                 return { success: true };
