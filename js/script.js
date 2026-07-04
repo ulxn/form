@@ -1,18 +1,16 @@
 /**
  * ============================================================
  * WEDDING WISHES – Main JavaScript
- * Uses CONFIG from config.js
+ * Uses CONFIG from config.js (the control panel)
  * 
- * ✅ SIMPLIFIED: No model mapping – sends raw data as-is
- * ✅ Browser detection: Brave, Edge, Chrome, Firefox, Safari, etc.
- * ✅ Device: raw from user-agent (e.g., "SM-G998B")
- * ✅ Device Name: personalized "{Name}'s {Device}"
+ * IMPROVED: Better device/browser detection using Client Hints
  * ============================================================
  */
 
 (function() {
     'use strict';
 
+    // ─── Get config from global ─────────────────────────────────
     const CFG = window.CONFIG;
     if (!CFG) {
         console.error('❌ CONFIG not loaded. Check config.js');
@@ -20,52 +18,57 @@
     }
 
     // ============================================================
-    // 0. DEVICE & BROWSER DETECTION (simplified)
+    // 0. DEVICE & BROWSER DETECTION (improved)
     // ============================================================
 
+    /**
+     * Get browser name using Client Hints API (more accurate than userAgent)
+     * Falls back to userAgent parsing if Client Hints not available
+     */
     function getBrowserInfo() {
+        // Try Client Hints first (gives real browser name, not spoofed)
+        if (navigator.userAgentData && navigator.userAgentData.brands) {
+            const brands = navigator.userAgentData.brands;
+            // Look for Brave, Edge, Opera, or Chrome
+            const knownBrands = ['Brave', 'Microsoft Edge', 'Opera', 'Google Chrome'];
+            for (const brand of knownBrands) {
+                const found = brands.find(b => b.brand === brand);
+                if (found) {
+                    return found.brand + ' ' + found.version;
+                }
+            }
+            // Fallback: use the first brand
+            if (brands.length > 0) {
+                return brands[0].brand + ' ' + brands[0].version;
+            }
+        }
+
+        // Fallback: parse userAgent
         const ua = navigator.userAgent;
         let browser = 'Unknown';
         let version = '';
 
-        // ─── Brave ──────────────────────────────────────────────────
-        if (ua.indexOf('Brave/') > -1 || (navigator.brave && navigator.brave.isBrave)) {
-            browser = 'Brave';
-            const match = ua.match(/Brave\/([\d.]+)/);
-            if (match) version = match[1];
-        }
-        // ─── Edge ──────────────────────────────────────────────────
-        else if (ua.indexOf('Edg/') > -1) {
+        if (ua.includes('Edg/')) {
             browser = 'Edge';
             const match = ua.match(/Edg\/([\d.]+)/);
             if (match) version = match[1];
-        }
-        // ─── Opera ─────────────────────────────────────────────────
-        else if (ua.indexOf('OPR/') > -1 || ua.indexOf('Opera/') > -1) {
+        } else if (ua.includes('OPR/') || ua.includes('Opera/')) {
             browser = 'Opera';
             const match = ua.match(/(?:OPR|Opera)\/([\d.]+)/);
             if (match) version = match[1];
-        }
-        // ─── Chrome ─────────────────────────────────────────────────
-        else if (ua.indexOf('Chrome/') > -1 && ua.indexOf('Edg/') === -1) {
+        } else if (ua.includes('Chrome/') && !ua.includes('Edg/')) {
             browser = 'Chrome';
             const match = ua.match(/Chrome\/([\d.]+)/);
             if (match) version = match[1];
-        }
-        // ─── Firefox ─────────────────────────────────────────────────
-        else if (ua.indexOf('Firefox/') > -1) {
+        } else if (ua.includes('Firefox/')) {
             browser = 'Firefox';
             const match = ua.match(/Firefox\/([\d.]+)/);
             if (match) version = match[1];
-        }
-        // ─── Safari ─────────────────────────────────────────────────
-        else if (ua.indexOf('Safari/') > -1 && ua.indexOf('Chrome/') === -1) {
+        } else if (ua.includes('Safari/') && !ua.includes('Chrome/')) {
             browser = 'Safari';
             const match = ua.match(/Version\/([\d.]+)/);
             if (match) version = match[1];
-        }
-        // ─── Internet Explorer ──────────────────────────────────────
-        else if (ua.indexOf('MSIE ') > -1 || ua.indexOf('Trident/') > -1) {
+        } else if (ua.includes('MSIE ') || ua.includes('Trident/')) {
             browser = 'Internet Explorer';
             const match = ua.match(/(?:MSIE |rv:)([\d.]+)/);
             if (match) version = match[1];
@@ -74,83 +77,122 @@
         return browser + (version ? ' ' + version : '');
     }
 
-    function getDeviceDetails() {
-        const ua = navigator.userAgent;
+    /**
+     * Get device model using Client Hints API
+     * Returns: model string (e.g., "SM-S911B", "iPhone17,1") or empty string
+     */
+    function getDeviceModel() {
+        // Try Client Hints: navigator.userAgentData.model
+        if (navigator.userAgentData && navigator.userAgentData.model) {
+            return navigator.userAgentData.model;
+        }
 
-        // ─── Detect device type ────────────────────────────────────
+        // Fallback: try to extract from userAgent
+        const ua = navigator.userAgent;
+        // Android model: often "SM-XXXX" or "Pixel X"
+        const androidMatch = ua.match(/; (SM-[A-Z0-9]+|Pixel\s?\d+|[A-Za-z]+\s?\d+)/);
+        if (androidMatch) return androidMatch[1];
+        // iPhone model: "iPhone14,2" etc.
+        const iphoneMatch = ua.match(/iPhone(\d+,\d+)/);
+        if (iphoneMatch) return 'iPhone' + iphoneMatch[1];
+
+        return '';
+    }
+
+    /**
+     * Get device type and friendly name
+     */
+    function getDeviceInfo() {
+        const ua = navigator.userAgent;
         const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone|Opera Mini|IEMobile/i.test(ua);
         const isTablet = /Tablet|iPad|PlayBook|Silk|Android(?!.*Mobile)/i.test(ua);
+        const isDesktop = !isMobile && !isTablet;
 
         let deviceType = 'Desktop';
         if (isTablet) deviceType = 'Tablet';
         else if (isMobile) deviceType = 'Mobile';
 
-        // ─── Extract device model from UA (raw, no mapping) ──────
-        let deviceModel = 'Unknown';
+        // Get model
+        let model = getDeviceModel();
 
-        // iPhone
-        if (ua.indexOf('iPhone') > -1) {
-            const match = ua.match(/iPhone([\d,]+)/);
-            deviceModel = match ? 'iPhone ' + match[1].replace(/,/g, '.') : 'iPhone';
+        // Build friendly device name
+        let deviceName = deviceType;
+
+        // Try to get OS/platform
+        let os = '';
+        if (navigator.userAgentData && navigator.userAgentData.platform) {
+            os = navigator.userAgentData.platform;
+        } else if (ua.includes('Windows')) {
+            os = 'Windows';
+        } else if (ua.includes('Mac OS')) {
+            os = 'macOS';
+        } else if (ua.includes('Linux') && !ua.includes('Android')) {
+            os = 'Linux';
+        } else if (ua.includes('Android')) {
+            os = 'Android';
+        } else if (ua.includes('iPhone') || ua.includes('iPad')) {
+            os = 'iOS';
         }
-        // iPad
-        else if (ua.indexOf('iPad') > -1) {
-            const match = ua.match(/iPad([\d,]+)/);
-            deviceModel = match ? 'iPad ' + match[1].replace(/,/g, '.') : 'iPad';
-        }
-        // Android – try to get model from UA
-        else if (ua.indexOf('Android') > -1) {
-            // Try to extract model from UA (e.g., "SM-G998B", "Pixel 6")
-            let modelMatch = ua.match(/; ([^;]+) Build\//);
-            if (modelMatch) {
-                let rawModel = modelMatch[1].trim();
-                // Clean up common prefixes
-                rawModel = rawModel.replace(/^[Ll]inux; /, '');
-                // If it's very long, try to find a shorter pattern
-                if (rawModel.length > 20) {
-                    const shortMatch = rawModel.match(/([A-Z]{2,3}-[A-Z0-9]+)/);
-                    if (shortMatch) rawModel = shortMatch[1];
+
+        // Build friendly name: "iPhone 16 Pro" or "Samsung Galaxy S23"
+        if (model) {
+            // Map common model codes to friendly names (optional)
+            const modelMap = {
+                // iPhone models
+                'iPhone17,1': 'iPhone 16 Pro',
+                'iPhone17,2': 'iPhone 16 Pro Max',
+                'iPhone17,3': 'iPhone 16',
+                'iPhone17,4': 'iPhone 16 Plus',
+                'iPhone16,1': 'iPhone 15 Pro',
+                'iPhone16,2': 'iPhone 15 Pro Max',
+                'iPhone16,3': 'iPhone 15',
+                'iPhone16,4': 'iPhone 15 Plus',
+                'iPhone15,2': 'iPhone 14 Pro',
+                'iPhone15,3': 'iPhone 14 Pro Max',
+                'iPhone15,4': 'iPhone 14',
+                'iPhone15,5': 'iPhone 14 Plus',
+                'iPhone14,2': 'iPhone 13 Pro',
+                'iPhone14,3': 'iPhone 13 Pro Max',
+                'iPhone14,4': 'iPhone 13 mini',
+                'iPhone14,5': 'iPhone 13',
+                // Samsung (model codes)
+                'SM-S911B': 'Galaxy S23',
+                'SM-S918B': 'Galaxy S23 Ultra',
+                'SM-S901B': 'Galaxy S22',
+                'SM-S908B': 'Galaxy S22 Ultra',
+                'SM-G998B': 'Galaxy S21 Ultra',
+                'SM-G991B': 'Galaxy S21',
+                'SM-A536B': 'Galaxy A53',
+                'SM-A546B': 'Galaxy A54',
+                // Pixel
+                'Pixel 8': 'Pixel 8',
+                'Pixel 8 Pro': 'Pixel 8 Pro',
+                'Pixel 7': 'Pixel 7',
+                'Pixel 7 Pro': 'Pixel 7 Pro',
+                'Pixel 6': 'Pixel 6',
+                'Pixel 6 Pro': 'Pixel 6 Pro',
+            };
+            if (modelMap[model]) {
+                deviceName = modelMap[model];
+            } else {
+                // If model starts with "iPhone", use it directly
+                if (model.startsWith('iPhone')) {
+                    deviceName = model;
+                } else {
+                    deviceName = model;
                 }
-                deviceModel = rawModel;
-            } else {
-                deviceModel = 'Android Device';
             }
-        }
-        // Windows
-        else if (ua.indexOf('Windows NT') > -1) {
-            const match = ua.match(/Windows NT ([\d.]+)/);
-            if (match) {
-                const ver = match[1];
-                if (ver === '10.0') deviceModel = 'Windows 10/11';
-                else if (ver === '6.3') deviceModel = 'Windows 8.1';
-                else if (ver === '6.2') deviceModel = 'Windows 8';
-                else if (ver === '6.1') deviceModel = 'Windows 7';
-                else deviceModel = 'Windows ' + ver;
-            } else {
-                deviceModel = 'Windows PC';
-            }
-        }
-        // macOS
-        else if (ua.indexOf('Mac OS X') > -1) {
-            const match = ua.match(/Mac OS X ([\d_]+)/);
-            if (match) {
-                const ver = match[1].replace(/_/g, '.');
-                deviceModel = 'macOS ' + ver;
-            } else {
-                deviceModel = 'Mac';
-            }
-        }
-        // Linux
-        else if (ua.indexOf('Linux') > -1) {
-            deviceModel = 'Linux';
+        } else {
+            // No model: use OS + device type
+            deviceName = os ? os + ' ' + deviceType : deviceType;
         }
 
-        return {
-            type: deviceType,
-            model: deviceModel,
-        };
+        return { device: deviceType, deviceName: deviceName, model: model };
     }
 
+    /**
+     * Get IP address
+     */
     function getIP() {
         return fetch('https://api.ipify.org?format=json')
             .then(function(res) {
@@ -230,7 +272,7 @@
     });
 
     // ============================================================
-    // 3. ANTI‑SPAM
+    // 3. ANTI‑SPAM: Load time + human flag
     // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
         const loadTimeField = document.getElementById('formLoadTime');
@@ -256,7 +298,7 @@
     });
 
     // ============================================================
-    // 4. MESSAGE STORE
+    // 4. MESSAGE STORE (localStorage)
     // ============================================================
     const STORAGE_KEY = CFG.STORAGE_KEY;
     const PAGE_SIZE = CFG.PAGE_SIZE;
@@ -428,6 +470,7 @@
     unsendBtn.addEventListener('click', function() {
         if (pendingMessageId === null) return;
 
+        // ─── Send unsend request to server ──────────────────────
         const payload = new URLSearchParams();
         payload.append('action', 'unsend');
         payload.append('id', pendingMessageId);
@@ -439,10 +482,15 @@
         })
         .then(function(response) { return response.json(); })
         .then(function(data) {
-            if (!data.success) console.warn('Unsend failed:', data.error);
+            if (!data.success) {
+                console.warn('Unsend failed:', data.error);
+            }
         })
-        .catch(function(err) { console.warn('Unsend network error:', err); });
+        .catch(function(err) {
+            console.warn('Unsend network error:', err);
+        });
 
+        // ─── Remove from local storage and UI ────────────────────
         const index = allMessages.findIndex(function(m) { return m._id === pendingMessageId; });
         if (index !== -1) {
             allMessages.splice(index, 1);
@@ -458,7 +506,7 @@
     });
 
     // ============================================================
-    // 8. FORM SUBMISSION – with simplified tracking
+    // 8. FORM SUBMISSION – with full tracking (improved)
     // ============================================================
     const form = document.getElementById('contactForm');
     const statusDiv = document.getElementById('formStatus');
@@ -473,7 +521,7 @@
             statusDiv.className = '';
             statusDiv.textContent = '';
 
-            // ─── Anti‑spam ──────────────────────────────────────────
+            // ─── Anti‑spam checks ──────────────────────────────────
             if (CFG.HONEYPOT_ENABLED) {
                 const honeypot = document.getElementById('honeypot');
                 if (honeypot && honeypot.value.trim() !== '') {
@@ -504,28 +552,24 @@
             submitText.textContent = CFG.LABELS.sending;
             submitSpinner.style.display = 'inline';
 
-            // ─── Get user's name for personalization ──────────────
-            const name = form.querySelector('[name="name"]').value.trim() || 'Guest';
-
-            // ─── Detect browser & device ──────────────────────────
+            // ─── Gather device/browser info (improved) ────────────
             const browser = getBrowserInfo();
-            const deviceDetails = getDeviceDetails();
-
-            // ─── Personalized device name ──────────────────────────
-            const personalisedDeviceName = name + "'s " + (deviceDetails.model || 'Device');
+            const deviceInfo = getDeviceInfo();
 
             // ─── Get IP ────────────────────────────────────────────
             getIP().then(function(ip) {
+                // ─── Build payload ─────────────────────────────────
                 const formData = new FormData(form);
                 formData.delete('honeypot');
                 formData.append('action', 'add');
                 formData.append('ip', ip || '');
                 formData.append('browser', browser);
-                formData.append('device', deviceDetails.model);      // raw model
-                formData.append('deviceName', personalisedDeviceName);
+                formData.append('device', deviceInfo.device);
+                formData.append('deviceName', deviceInfo.deviceName);
 
                 const urlEncoded = new URLSearchParams(formData).toString();
 
+                // ─── Send ──────────────────────────────────────────
                 return fetch(CFG.WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -545,11 +589,14 @@
                     statusDiv.className = 'success';
                     statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
 
+                    const name = form.querySelector('[name="name"]').value;
+                    const rsvp = form.querySelector('[name="rsvp"]').value;
+                    const message = form.querySelector('[name="message"]').value;
                     const newMsg = {
                         _id: data.id || (Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
                         name: name,
-                        rsvp: form.querySelector('[name="rsvp"]').value,
-                        message: form.querySelector('[name="message"]').value,
+                        rsvp: rsvp,
+                        message: message,
                         time: getRelativeTime()
                     };
                     allMessages.unshift(newMsg);
@@ -591,7 +638,11 @@
         if (unsendTimerId) { clearInterval(unsendTimerId); }
     });
 
-    console.log('💍 Wedding wishes form ready (simplified tracking)');
+    console.log('💍 Wedding wishes form ready (with improved device tracking)');
+    console.log('👰 Bride:', CFG.BRIDE_NAME);
+    console.log('🤵 Groom:', CFG.GROOM_NAME);
     console.log('📤 Web App URL:', CFG.WEB_APP_URL);
+    console.log('🔍 Browser detected:', getBrowserInfo());
+    console.log('📱 Device info:', getDeviceInfo());
 
 })();
