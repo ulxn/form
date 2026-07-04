@@ -227,7 +227,7 @@
         if (form) form.addEventListener('focusin', setHuman, { passive: true });
 
         applyConfigToDOM();
-        loadDraft();
+        // loadDraft();
         loadCachedMessagesInstantly();
         fetchMessages();
     });
@@ -293,18 +293,18 @@
         } catch (_) {}
     }
 
-    function loadDraft() {
-        try {
-            const raw = localStorage.getItem(CFG.DRAFT_KEY);
-            if (!raw) return;
-            const draft = JSON.parse(raw);
-            document.getElementById('form-name').value = draft.name || '';
-            document.getElementById('rsvp').value = draft.rsvp || '';
-            document.getElementById('form-message').value = draft.message || '';
-            const counter = document.getElementById('msg-counter');
-            if (counter) counter.textContent = (draft.message || '').length + ' / 300';
-        } catch (_) {}
-    }
+    // function loadDraft() {
+    //     try {
+    //         const raw = localStorage.getItem(CFG.DRAFT_KEY);
+    //         if (!raw) return;
+    //         const draft = JSON.parse(raw);
+    //         document.getElementById('form-name').value = draft.name || '';
+    //         document.getElementById('rsvp').value = draft.rsvp || '';
+    //         document.getElementById('form-message').value = draft.message || '';
+    //         const counter = document.getElementById('msg-counter');
+    //         if (counter) counter.textContent = (draft.message || '').length + ' / 300';
+    //     } catch (_) {}
+    // }
 
     function clearDraft() {
         try {
@@ -401,9 +401,31 @@
 
             const pending = getPendingMessages();
             const serverIds = serverData.map(function(m) { return m.id; });
-            const pendingToShow = pending.filter(function(m) {
-                return !serverIds.includes(m._id);
+
+            // ─── Filter pending messages ──────────────────────────────────
+            // Remove any pending message that already exists on the server
+            // by comparing content (name + rsvp + message)
+            const pendingToShow = pending.filter(function(p) {
+                // First check by ID
+                if (serverIds.includes(p._id)) return false;
+
+                // Then check by content (in case the ID differs)
+                const existsOnServer = serverData.some(function(s) {
+                    return s.name === p.name &&
+                        s.rsvp === p.rsvp &&
+                        s.message === p.message &&
+                        (Math.abs(new Date(s.time) - new Date(p.time)) < 60000); // within 1 minute
+                });
+
+                // If it exists on the server, remove it from pending storage
+                if (existsOnServer) {
+                    removePendingMessage(p._id);
+                    return false;
+                }
+
+                return true;
             });
+
             const pendingUI = pendingToShow.map(function(m) {
                 return {
                     _id: m._id,
@@ -414,6 +436,7 @@
                     status: 'pending'
                 };
             });
+
             const combined = serverData.map(function(m) {
                 return {
                     _id: m.id,
@@ -424,10 +447,12 @@
                     status: 'sent'
                 };
             });
+
             const all = combined.concat(pendingUI);
             all.sort(function(a, b) {
                 return new Date(b.time) - new Date(a.time);
             });
+
             try {
                 localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(all));
             } catch (_) {}

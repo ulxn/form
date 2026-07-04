@@ -53,7 +53,7 @@ h1, h2, h3 { font-family: 'Cormorant Garamond', serif; }
     background: transparent;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: none;
 }
 .topbar .brand {
     display: flex;
