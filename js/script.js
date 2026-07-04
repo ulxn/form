@@ -1,15 +1,23 @@
 /**
  * ============================================================
- * WEDDING WISHES – Main JavaScript (Enhanced Tracking)
- * Now captures: device, OS, browser, browser core, IP,
- * location, battery, screen, graphics, time zone.
+ * WEDDING WISHES – Frontend (client‑side data collection)
+ * ============================================================
+ * 
+ * CAPTURES (client‑side only):
+ *   - Battery status (level, charging)
+ *   - Screen resolution, aspect ratio, orientation
+ *   - Graphics card (via WEBGL_debug_renderer_info – may be blocked)
+ *   - System time zone
+ *   - Public IP address (via ipify.org)
+ * 
+ * Device model, OS, browser, etc. are captured SERVER‑SIDE
+ * using User‑Agent Client Hints (UA‑CH) headers.
  * ============================================================
  */
 
 (function() {
     'use strict';
 
-    // ─── Get config from global ─────────────────────────────────
     const CFG = window.CONFIG;
     if (!CFG) {
         console.error('❌ CONFIG not loaded. Check config.js');
@@ -17,125 +25,7 @@
     }
 
     // ============================================================
-    // 0. ENHANCED DEVICE & BROWSER DETECTION
-    // ============================================================
-
-    function getBrowserInfo() {
-        // Use Client Hints for accurate browser name
-        if (navigator.userAgentData && navigator.userAgentData.brands) {
-            const brands = navigator.userAgentData.brands;
-            const knownBrands = ['Brave', 'Microsoft Edge', 'Opera', 'Google Chrome'];
-            for (const brand of knownBrands) {
-                const found = brands.find(b => b.brand === brand);
-                if (found) {
-                    return found.brand + ' ' + found.version;
-                }
-            }
-            if (brands.length > 0) {
-                return brands[0].brand + ' ' + brands[0].version;
-            }
-        }
-        // Fallback to userAgent parsing
-        const ua = navigator.userAgent;
-        if (ua.includes('Edg/')) return 'Edge ' + ua.match(/Edg\/([\d.]+)/)[1];
-        if (ua.includes('OPR/') || ua.includes('Opera/')) return 'Opera ' + (ua.match(/(?:OPR|Opera)\/([\d.]+)/) || [])[1];
-        if (ua.includes('Chrome/') && !ua.includes('Edg/')) return 'Chrome ' + (ua.match(/Chrome\/([\d.]+)/) || [])[1];
-        if (ua.includes('Firefox/')) return 'Firefox ' + (ua.match(/Firefox\/([\d.]+)/) || [])[1];
-        if (ua.includes('Safari/') && !ua.includes('Chrome/')) return 'Safari ' + (ua.match(/Version\/([\d.]+)/) || [])[1];
-        return 'Unknown';
-    }
-
-    function getTrueBrowserCore() {
-        const ua = navigator.userAgent;
-        if (ua.includes('Edg/') || ua.includes('Chrome/') || ua.includes('OPR/') || ua.includes('Brave/')) return 'Chromium';
-        if (ua.includes('Firefox/')) return 'Gecko';
-        if (ua.includes('Safari/') && !ua.includes('Chrome/')) return 'WebKit';
-        return 'Unknown';
-    }
-
-    function getDeviceInfo() {
-        const ua = navigator.userAgent;
-        let model = '';
-        if (navigator.userAgentData && navigator.userAgentData.model) {
-            model = navigator.userAgentData.model;
-        } else {
-            // Fallback: try to extract from userAgent
-            const androidMatch = ua.match(/; (SM-[A-Z0-9]+|Pixel\s?\d+|[A-Za-z]+\s?\d+)/);
-            if (androidMatch) model = androidMatch[1];
-            const iphoneMatch = ua.match(/iPhone(\d+,\d+)/);
-            if (iphoneMatch) model = 'iPhone' + iphoneMatch[1];
-        }
-
-        let os = 'Unknown';
-        if (navigator.userAgentData && navigator.userAgentData.platform) {
-            os = navigator.userAgentData.platform;
-        } else if (ua.includes('Windows')) os = 'Windows';
-        else if (ua.includes('Mac OS')) os = 'macOS';
-        else if (ua.includes('Linux') && !ua.includes('Android')) os = 'Linux';
-        else if (ua.includes('Android')) os = 'Android';
-        else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
-
-        let deviceType = 'Desktop';
-        if (/Tablet|iPad|PlayBook|Silk|Android(?!.*Mobile)/i.test(ua)) deviceType = 'Tablet';
-        else if (/Mobi|Android|iPhone|iPod|BlackBerry|Windows Phone|Opera Mini|IEMobile/i.test(ua)) deviceType = 'Mobile';
-
-        return { deviceType, model, os };
-    }
-
-    function getOperatingSystem() {
-        const info = getDeviceInfo();
-        return info.os;
-    }
-
-    function getDeviceTypeModel() {
-        const info = getDeviceInfo();
-        return info.deviceType + (info.model ? ' (' + info.model + ')' : '');
-    }
-
-    // ============================================================
-    // 1. IP & GEOLOCATION
-    // ============================================================
-
-    function getIPInfo() {
-        // Fetch IP and use ip-api.com for geolocation (free, no API key needed)
-        return fetch('https://api.ipify.org?format=json')
-            .then(res => res.json())
-            .then(data => {
-                const ip = data.ip;
-                // Now get geolocation data
-                return fetch('http://ip-api.com/json/' + ip + '?fields=status,message,country,regionName,city,lat,lon,isp,org,as,timezone')
-                    .then(res => res.json())
-                    .then(geo => {
-                        return {
-                            ip: ip,
-                            country: geo.country || 'Unknown',
-                            region: geo.regionName || 'Unknown',
-                            city: geo.city || 'Unknown',
-                            lat: geo.lat || 'Unknown',
-                            lon: geo.lon || 'Unknown',
-                            isp: geo.isp || geo.org || 'Unknown',
-                            nameservers: geo.as || 'Unknown',
-                            timezone: geo.timezone || 'Unknown'
-                        };
-                    });
-            })
-            .catch(() => {
-                return {
-                    ip: 'Unknown',
-                    country: 'Unknown',
-                    region: 'Unknown',
-                    city: 'Unknown',
-                    lat: 'Unknown',
-                    lon: 'Unknown',
-                    isp: 'Unknown',
-                    nameservers: 'Unknown',
-                    timezone: 'Unknown'
-                };
-            });
-    }
-
-    // ============================================================
-    // 2. BATTERY STATUS
+    // 1. BATTERY STATUS
     // ============================================================
 
     function getBatteryInfo() {
@@ -146,33 +36,43 @@
                 status: 'Unknown'
             });
         }
-        return navigator.getBattery().then(function(battery) {
-            return {
-                level: Math.round(battery.level * 100) + '%',
-                charging: battery.charging ? 'Yes' : 'No',
-                status: battery.charging ? 'Charging' : 'Discharging'
-            };
-        }).catch(function() {
-            return { level: 'Unknown', charging: 'Unknown', status: 'Unknown' };
-        });
+        return navigator.getBattery()
+            .then(function(battery) {
+                return {
+                    level: Math.round(battery.level * 100) + '%',
+                    charging: battery.charging ? 'Yes' : 'No',
+                    status: battery.charging ? 'Charging' : 'Discharging'
+                };
+            })
+            .catch(function() {
+                return { level: 'Unknown', charging: 'Unknown', status: 'Unknown' };
+            });
     }
 
     // ============================================================
-    // 3. SCREEN INFO
+    // 2. SCREEN INFO (physical pixels)
     // ============================================================
 
     function getScreenInfo() {
         const width = screen.width;
         const height = screen.height;
-        const gcd = function(a, b) { return b === 0 ? a : gcd(b, a % b); };
-        const ratio = gcd(width, height);
-        const aspectRatio = (width / ratio) + ':' + (height / ratio);
+        
+        function gcd(a, b) {
+            a = Math.floor(a);
+            b = Math.floor(b);
+            return b === 0 ? a : gcd(b, a % b);
+        }
+        
+        const divisor = gcd(width, height);
+        const aspectRatio = (width / divisor) + ':' + (height / divisor);
+        
         let orientation = 'Unknown';
         if (screen.orientation && screen.orientation.type) {
             orientation = screen.orientation.type;
         } else if (window.orientation !== undefined) {
             orientation = (window.orientation === 0 || window.orientation === 180) ? 'portrait' : 'landscape';
         }
+        
         return {
             resolution: width + 'x' + height,
             aspectRatio: aspectRatio,
@@ -181,26 +81,30 @@
     }
 
     // ============================================================
-    // 4. GRAPHIC CARD INFO (may be blocked)
+    // 3. GRAPHICS CARD (may be blocked)
     // ============================================================
 
     function getGraphicsInfo() {
         try {
             const canvas = document.createElement('canvas');
             const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-            if (!gl) return 'Unknown';
+            if (!gl) return 'Unknown (WebGL not supported)';
+            
             const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-            if (!debugInfo) return 'Unknown (Extension not available)';
+            if (!debugInfo) {
+                return 'Unknown (Extension not available – browser may block it)';
+            }
+            
             const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
             const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
             return vendor + ' / ' + renderer;
         } catch (_) {
-            return 'Unknown';
+            return 'Unknown (Error accessing graphics info)';
         }
     }
 
     // ============================================================
-    // 5. SYSTEM TIME ZONE
+    // 4. SYSTEM TIME ZONE
     // ============================================================
 
     function getTimeZone() {
@@ -212,7 +116,75 @@
     }
 
     // ============================================================
-    // 6. APPLY CONFIG TO DOM (unchanged from previous version)
+    // 5. PUBLIC IP ADDRESS (via ipify.org)
+    // ============================================================
+
+    function getPublicIP() {
+        return fetch('https://api.ipify.org?format=json')
+            .then(function(res) {
+                if (!res.ok) throw new Error('IP fetch failed');
+                return res.json();
+            })
+            .then(function(data) {
+                return data.ip;
+            })
+            .catch(function() {
+                return 'Unknown';
+            });
+    }
+
+    // ============================================================
+    // 6. THEME TOGGLE (unchanged)
+    // ============================================================
+
+    const themeToggle = document.getElementById('theme-toggle');
+    const body = document.body;
+    const icon = themeToggle.querySelector('i');
+
+    function applyTheme(theme) {
+        const isDark = theme === 'dark';
+        body.classList.toggle('dark-theme', isDark);
+        icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    let currentTheme = localStorage.getItem('theme') || 'light';
+    applyTheme(currentTheme);
+
+    themeToggle.addEventListener('click', function() {
+        currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('theme', currentTheme);
+        applyTheme(currentTheme);
+    });
+
+    // ============================================================
+    // 7. ANTI‑SPAM (unchanged)
+    // ============================================================
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const loadTimeField = document.getElementById('formLoadTime');
+        if (loadTimeField) loadTimeField.value = Date.now();
+
+        const setHuman = function() {
+            const flagField = document.getElementById('humanFlag');
+            if (flagField && flagField.value !== 'true') {
+                flagField.value = 'true';
+            }
+            ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(function(event) {
+                document.removeEventListener(event, setHuman);
+            });
+        };
+        ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(function(event) {
+            document.addEventListener(event, setHuman, { passive: true });
+        });
+
+        const form = document.getElementById('contactForm');
+        if (form) form.addEventListener('focusin', setHuman, { passive: true });
+
+        applyConfigToDOM();
+    });
+
+    // ============================================================
+    // 8. APPLY CONFIG TO DOM (unchanged)
     // ============================================================
 
     function applyConfigToDOM() {
@@ -259,57 +231,7 @@
     }
 
     // ============================================================
-    // 7. THEME TOGGLE (unchanged)
-    // ============================================================
-
-    const themeToggle = document.getElementById('theme-toggle');
-    const body = document.body;
-    const icon = themeToggle.querySelector('i');
-
-    function applyTheme(theme) {
-        const isDark = theme === 'dark';
-        body.classList.toggle('dark-theme', isDark);
-        icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-    }
-
-    let currentTheme = localStorage.getItem('theme') || 'light';
-    applyTheme(currentTheme);
-
-    themeToggle.addEventListener('click', function() {
-        currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        localStorage.setItem('theme', currentTheme);
-        applyTheme(currentTheme);
-    });
-
-    // ============================================================
-    // 8. ANTI‑SPAM: Load time + human flag (unchanged)
-    // ============================================================
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const loadTimeField = document.getElementById('formLoadTime');
-        if (loadTimeField) loadTimeField.value = Date.now();
-
-        const setHuman = function() {
-            const flagField = document.getElementById('humanFlag');
-            if (flagField && flagField.value !== 'true') {
-                flagField.value = 'true';
-            }
-            ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(function(event) {
-                document.removeEventListener(event, setHuman);
-            });
-        };
-        ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(function(event) {
-            document.addEventListener(event, setHuman, { passive: true });
-        });
-
-        const form = document.getElementById('contactForm');
-        if (form) form.addEventListener('focusin', setHuman, { passive: true });
-
-        applyConfigToDOM();
-    });
-
-    // ============================================================
-    // 9. MESSAGE STORE (localStorage) – unchanged
+    // 9. MESSAGE STORE (unchanged)
     // ============================================================
 
     const STORAGE_KEY = CFG.STORAGE_KEY;
@@ -485,7 +407,6 @@
     unsendBtn.addEventListener('click', function() {
         if (pendingMessageId === null) return;
 
-        // ─── Send unsend request to server ──────────────────────
         const payload = new URLSearchParams();
         payload.append('action', 'unsend');
         payload.append('id', pendingMessageId);
@@ -505,7 +426,6 @@
             console.warn('Unsend network error:', err);
         });
 
-        // ─── Remove from local storage and UI ────────────────────
         const index = allMessages.findIndex(function(m) { return m._id === pendingMessageId; });
         if (index !== -1) {
             allMessages.splice(index, 1);
@@ -521,7 +441,7 @@
     });
 
     // ============================================================
-    // 13. FORM SUBMISSION – with full enhanced tracking
+    // 13. FORM SUBMISSION – client‑side data only
     // ============================================================
 
     const form = document.getElementById('contactForm');
@@ -537,7 +457,7 @@
             statusDiv.className = '';
             statusDiv.textContent = '';
 
-            // ─── Anti‑spam checks (unchanged) ──────────────────────
+            // Anti‑spam
             if (CFG.HONEYPOT_ENABLED) {
                 const honeypot = document.getElementById('honeypot');
                 if (honeypot && honeypot.value.trim() !== '') {
@@ -563,71 +483,36 @@
                 return;
             }
 
-            // ─── Show loading ──────────────────────────────────────
             submitBtn.disabled = true;
             submitText.textContent = CFG.LABELS.sending;
             submitSpinner.style.display = 'inline';
 
-            // ─── Gather all data ──────────────────────────────────
-            const browser = getBrowserInfo();
-            const browserCore = getTrueBrowserCore();
-            const deviceInfo = getDeviceInfo();
             const timeZone = getTimeZone();
             const screenInfo = getScreenInfo();
             const graphicsInfo = getGraphicsInfo();
 
-            // ─── Get IP & geolocation ─────────────────────────────
-            getIPInfo().then(function(ipData) {
-                // ─── Get battery info ─────────────────────────────
+            getPublicIP().then(function(ip) {
                 return getBatteryInfo().then(function(batteryData) {
-                    return {
-                        ipData: ipData,
-                        batteryData: batteryData
-                    };
+                    return { ip: ip, batteryData: batteryData };
                 });
             }).then(function(result) {
-                const ipData = result.ipData;
+                const ip = result.ip;
                 const batteryData = result.batteryData;
 
-                // ─── Build payload ─────────────────────────────────
                 const formData = new FormData(form);
                 formData.delete('honeypot');
                 formData.append('action', 'add');
-                formData.append('browser', browser);
-                formData.append('browserCore', browserCore);
-                formData.append('deviceType', deviceInfo.deviceType);
-                formData.append('deviceModel', deviceInfo.model);
-                formData.append('os', deviceInfo.os);
+                formData.append('ip', ip);
                 formData.append('timeZone', timeZone);
                 formData.append('graphics', graphicsInfo);
-
-                // IP & Location
-                formData.append('ip', ipData.ip);
-                formData.append('country', ipData.country);
-                formData.append('region', ipData.region);
-                formData.append('city', ipData.city);
-                formData.append('lat', ipData.lat);
-                formData.append('lon', ipData.lon);
-                formData.append('isp', ipData.isp);
-                formData.append('nameservers', ipData.nameservers);
-                formData.append('geoTimezone', ipData.timezone);
-
-                // Battery
                 formData.append('batteryLevel', batteryData.level);
                 formData.append('batteryCharging', batteryData.charging);
                 formData.append('batteryStatus', batteryData.status);
-
-                // Screen
                 formData.append('screenResolution', screenInfo.resolution);
                 formData.append('screenAspectRatio', screenInfo.aspectRatio);
                 formData.append('screenOrientation', screenInfo.orientation);
 
-                // VPN (not detected client-side)
-                formData.append('vpn', 'Not Detected');
-
                 const urlEncoded = new URLSearchParams(formData).toString();
-
-                // ─── Send ──────────────────────────────────────────
                 return fetch(CFG.WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -647,7 +532,6 @@
                     statusDiv.className = 'success';
                     statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
 
-                    // Add message to local list
                     const name = form.querySelector('[name="name"]').value;
                     const rsvp = form.querySelector('[name="rsvp"]').value;
                     const message = form.querySelector('[name="message"]').value;
@@ -698,9 +582,5 @@
         if (unsendTimerId) { clearInterval(unsendTimerId); }
     });
 
-    console.log('💍 Wedding wishes form ready (enhanced tracking)');
-    console.log('📱 Device Info:', getDeviceTypeModel());
-    console.log('🌐 Browser:', getBrowserInfo());
-    console.log('🖥️ OS:', getOperatingSystem());
-
+    console.log('💍 Wedding wishes form ready (client‑side data collection)');
 })();
