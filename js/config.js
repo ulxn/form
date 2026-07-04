@@ -20,7 +20,7 @@ const CONFIG = (function() {
     // ============================================================
     // ⏱️ ANTI‑SPAM SETTINGS
     // ============================================================
-    const MIN_SUBMIT_TIME = 10000; // milliseconds (10 seconds) – minimum time to fill form
+    const MIN_SUBMIT_TIME = 10000; // milliseconds (10 seconds)
     const HONEYPOT_ENABLED = true; // true = enabled, false = disabled
 
     // ============================================================
@@ -42,12 +42,13 @@ const CONFIG = (function() {
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwceol5RTl762THc0xaxIOUJ9D2LFglIQf1DmqxJEFZ2exoE-AE7PxpbcgmikCOEpNiyw/exec';
 
     // ============================================================
-    // 💾 LOCAL STORAGE SETTINGS
+    // 💾 LOCAL STORAGE KEYS
     // ============================================================
-    const STORAGE_KEY = 'zw_messages';
-    const IP_TRACKING_KEY = 'zw_ip_tracking';
-    const COOLDOWN_KEY = 'zw_cooldown';
-    const PAGE_SIZE = 5;
+    const STORAGE_KEY = 'zw_messages';        // main message list (merged)
+    const PENDING_KEY = 'zw_pending';         // pending messages awaiting confirmation
+    const DRAFT_KEY = 'zw_draft';             // form draft
+    const IP_TRACKING_KEY = 'zw_ip_tracking'; // IP message counts
+    const COOLDOWN_KEY = 'zw_cooldown';       // cooldown timestamp
 
     // ============================================================
     // 📊 DATA COLLECTION TOGGLES
@@ -63,7 +64,7 @@ const CONFIG = (function() {
     };
 
     // ============================================================
-    // 🎨 TEXT & LABELS (easy to change language)
+    // 🎨 TEXT & LABELS
     // ============================================================
     const LABELS = {
         heroTitle: 'Bagikan Ucapan &amp; Doa Terbaikmu',
@@ -71,6 +72,7 @@ const CONFIG = (function() {
         brandSeparator: ' &amp; ',
         submitButton: 'Kirim',
         sending: 'Mengirim...',
+        retryButton: '↻ Retry',
         errorGeneric: 'Terjadi kesalahan.',
         errorBot: '🤖 Bot detected.',
         errorTooFast: '⏳ Take your time, Buddy.',
@@ -91,6 +93,8 @@ const CONFIG = (function() {
         rsvpLabel: 'RSVP',
         nameLabel: 'Nama',
         messageLabel: 'Pesan',
+        pendingStatus: '⏳ Mengirim...',
+        failedStatus: '❌ Gagal',
     };
 
     // ============================================================
@@ -108,9 +112,10 @@ const CONFIG = (function() {
         NOTIFICATION_DURATION: NOTIFICATION_DURATION,
         WEB_APP_URL: WEB_APP_URL,
         STORAGE_KEY: STORAGE_KEY,
+        PENDING_KEY: PENDING_KEY,
+        DRAFT_KEY: DRAFT_KEY,
         IP_TRACKING_KEY: IP_TRACKING_KEY,
         COOLDOWN_KEY: COOLDOWN_KEY,
-        PAGE_SIZE: PAGE_SIZE,
         COLLECTION: COLLECTION,
         LABELS: LABELS,
     };
