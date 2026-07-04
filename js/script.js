@@ -404,6 +404,7 @@
             } catch (_) {}
             allMessages = all;
             currentPage = 1;
+            // Force a re‑render (even if the DOM hasn't updated)
             renderMessages(currentPage);
             console.log('✅ Messages rendered successfully. Count:', allMessages.length);
         })
@@ -456,11 +457,9 @@
         const listEl = document.getElementById('message-list');
         const countEl = document.getElementById('messages-count');
 
-        // ─── Debug: log what we have ──────────────────────────────────
-        console.log('🔍 renderMessages() called.');
-        console.log('📋 allMessages length:', allMessages.length);
-        console.log('📋 listEl found?', !!listEl);
-        console.log('📋 countEl found?', !!countEl);
+        // ─── Fallback PAGE_SIZE (ensure it’s a number) ──────────────
+        const pageSize = (typeof PAGE_SIZE === 'number' && PAGE_SIZE > 0) ? PAGE_SIZE : 5;
+        console.log('📄 Using pageSize:', pageSize);
 
         if (!listEl) {
             console.error('❌ message-list element not found!');
@@ -473,16 +472,15 @@
         if (total === 0) {
             listEl.innerHTML = '<div class="empty-state"><i class="fas fa-envelope-open-text"></i>' + CFG.LABELS.emptyState + '</div>';
             document.getElementById('pagination').innerHTML = '';
-            console.log('📭 Empty state rendered.');
             return;
         }
 
-        const totalPages = Math.ceil(total / PAGE_SIZE);
+        const totalPages = Math.ceil(total / pageSize);
         if (page < 1) page = 1;
         if (page > totalPages) page = totalPages;
         currentPage = page;
-        const start = (page - 1) * PAGE_SIZE;
-        const pageItems = allMessages.slice(start, start + PAGE_SIZE);
+        const start = (page - 1) * pageSize;
+        const pageItems = allMessages.slice(start, start + pageSize);
 
         console.log('📝 Rendering', pageItems.length, 'messages on page', page);
 
