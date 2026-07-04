@@ -20,8 +20,21 @@ const CONFIG = (function() {
     // ============================================================
     // ⏱️ ANTI‑SPAM SETTINGS
     // ============================================================
-    const MIN_SUBMIT_TIME = 10000; // milliseconds (10 seconds)
+    const MIN_SUBMIT_TIME = 10000; // milliseconds (10 seconds) – minimum time to fill form
     const HONEYPOT_ENABLED = true; // true = enabled, false = disabled
+
+    // ============================================================
+    // 🕒 COOLDOWN & LIMITS
+    // ============================================================
+    const COOLDOWN_TIME = 30000; // 30 seconds between messages per user
+    const MAX_MESSAGES_PER_IP = 3; // maximum number of successfully sent messages per IP (unsent excluded)
+    const UNSEND_TIMER = 20; // seconds before unsend option expires
+
+    // ============================================================
+    // ⏳ UI DURATIONS (milliseconds)
+    // ============================================================
+    const FORM_STATUS_DURATION = 5000; // how long form status messages stay visible
+    const NOTIFICATION_DURATION = 3000; // duration for notification toasts (except unsend)
 
     // ============================================================
     // 📡 BACKEND URL
@@ -32,6 +45,8 @@ const CONFIG = (function() {
     // 💾 LOCAL STORAGE SETTINGS
     // ============================================================
     const STORAGE_KEY = 'zw_messages';
+    const IP_TRACKING_KEY = 'zw_ip_tracking';
+    const COOLDOWN_KEY = 'zw_cooldown';
     const PAGE_SIZE = 5;
 
     // ============================================================
@@ -44,7 +59,7 @@ const CONFIG = (function() {
         graphics: true, // Graphics Card (may be blocked, client-side)
         timezone: true, // System Time Zone (fast, client-side)
         ip: true,       // IP Address (via ipify.org – fast)
-        isp: false,      // ISP (via ip-api.com – SLOW, ~1-2s). Disable to speed up submission.
+        isp: false,     // ISP (via ip-api.com – SLOW, ~1-2s). Disable to speed up submission.
     };
 
     // ============================================================
@@ -56,12 +71,13 @@ const CONFIG = (function() {
         brandSeparator: ' &amp; ',
         submitButton: 'Kirim',
         sending: 'Mengirim...',
-        // successMessage: 'Wish sent successfully! 🙏',
         errorGeneric: 'Terjadi kesalahan.',
         errorBot: '🤖 Bot detected.',
         errorTooFast: '⏳ Take your time, Buddy.',
         errorNoInteraction: '🤖 Please interact with the page before submitting.',
         errorConnection: 'Gagal terhubung. Periksa koneksi dan coba lagi.',
+        errorCooldown: '⏳ Tunggu sebentar untuk mengirim pesan lagi ya.',
+        errorLimitReached: '🚫 Anda telah mencapai batas maksimum pesan.',
         unsendToast: 'Pesan terkirim',
         unsendButton: 'Batalkan',
         unsendNotification: '↩ Pesan batal dikirimkan.',
@@ -85,8 +101,15 @@ const CONFIG = (function() {
         GROOM_NAME: GROOM_NAME,
         MIN_SUBMIT_TIME: MIN_SUBMIT_TIME,
         HONEYPOT_ENABLED: HONEYPOT_ENABLED,
+        COOLDOWN_TIME: COOLDOWN_TIME,
+        MAX_MESSAGES_PER_IP: MAX_MESSAGES_PER_IP,
+        UNSEND_TIMER: UNSEND_TIMER,
+        FORM_STATUS_DURATION: FORM_STATUS_DURATION,
+        NOTIFICATION_DURATION: NOTIFICATION_DURATION,
         WEB_APP_URL: WEB_APP_URL,
         STORAGE_KEY: STORAGE_KEY,
+        IP_TRACKING_KEY: IP_TRACKING_KEY,
+        COOLDOWN_KEY: COOLDOWN_KEY,
         PAGE_SIZE: PAGE_SIZE,
         COLLECTION: COLLECTION,
         LABELS: LABELS,

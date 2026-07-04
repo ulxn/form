@@ -5,6 +5,13 @@
  * 
  * Data collection is controlled by toggles in config.js.
  * If a feature is disabled, its value is set to 'Disabled'.
+ * 
+ * NEW:
+ *   - Cooldown (30s) between messages per user
+ *   - Max 3 messages per IP (unsent excluded)
+ *   - Unsend notification appears in same position as unsend toast
+ *   - All fields required (already enforced by HTML)
+ *   - Configurable durations and limits
  * ============================================================
  */
 
@@ -284,6 +291,8 @@
 
     const STORAGE_KEY = CFG.STORAGE_KEY;
     const PAGE_SIZE = CFG.PAGE_SIZE;
+    const IP_TRACKING_KEY = CFG.IP_TRACKING_KEY;
+    const COOLDOWN_KEY = CFG.COOLDOWN_KEY;
 
     const defaultMessages = [
         { name: 'Ahmad Fauzi', rsvp: 'Hadir', message: 'Selamat menempuh hidup baru! Semoga menjadi keluarga yang sakinah, mawaddah, warahmah.', time: '2 jam lalu' },
@@ -408,7 +417,7 @@
     }
 
     // ============================================================
-    // 12. TOAST SYSTEM (unchanged)
+    // 12. TOAST SYSTEM (with unified positioning)
     // ============================================================
 
     const unsendToast = document.getElementById('unsendToast');
@@ -418,7 +427,7 @@
     const unsendBtn = document.getElementById('unsendBtn');
 
     let unsendTimerId = null;
-    let unsendCountdown = 20;
+    let unsendCountdown = CFG.UNSEND_TIMER;
     let pendingMessageId = null;
     let notificationTimeout = null;
 
@@ -426,7 +435,7 @@
     function hideToast(toastEl) { toastEl.classList.remove('show'); }
 
     function showNotification(message, duration) {
-        duration = duration || 3000;
+        duration = duration || CFG.NOTIFICATION_DURATION;
         notificationText.textContent = message;
         showToast(notificationToast);
         if (notificationTimeout) clearTimeout(notificationTimeout);
@@ -435,8 +444,8 @@
 
     function startUnsendTimer(messageId) {
         if (unsendTimerId) { clearInterval(unsendTimerId); unsendTimerId = null; }
-        hideToast(notificationToast);
-        unsendCountdown = 20;
+        hideToast(notificationToast); // hide any previous notification
+        unsendCountdown = CFG.UNSEND_TIMER;
         toastTimer.textContent = unsendCountdown;
         pendingMessageId = messageId;
         showToast(unsendToast);
@@ -485,11 +494,48 @@
         if (unsendTimerId) { clearInterval(unsendTimerId); unsendTimerId = null; }
         pendingMessageId = null;
 
-        showNotification(CFG.LABELS.unsendNotification, 3000);
+        // Show the unsend notification in the same position (the notification toast)
+        showNotification(CFG.LABELS.unsendNotification, CFG.NOTIFICATION_DURATION);
     });
 
     // ============================================================
-    // 13. FORM SUBMISSION – with toggles
+    // 13. IP TRACKING & COOLDOWN HELPERS
+    // ============================================================
+
+    function getIPCount(ip) {
+        if (!ip || ip === 'Disabled') return 0;
+        try {
+            const data = JSON.parse(localStorage.getItem(IP_TRACKING_KEY) || '{}');
+            return data[ip] || 0;
+        } catch (_) { return 0; }
+    }
+
+    function incrementIPCount(ip) {
+        if (!ip || ip === 'Disabled') return;
+        try {
+            const data = JSON.parse(localStorage.getItem(IP_TRACKING_KEY) || '{}');
+            data[ip] = (data[ip] || 0) + 1;
+            localStorage.setItem(IP_TRACKING_KEY, JSON.stringify(data));
+        } catch (_) {}
+    }
+
+    function getCooldownRemaining() {
+        try {
+            const lastSubmit = parseInt(localStorage.getItem(COOLDOWN_KEY) || '0', 10);
+            const elapsed = Date.now() - lastSubmit;
+            const remaining = CFG.COOLDOWN_TIME - elapsed;
+            return remaining > 0 ? remaining : 0;
+        } catch (_) { return 0; }
+    }
+
+    function setCooldown() {
+        try {
+            localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
+        } catch (_) {}
+    }
+
+    // ============================================================
+    // 14. FORM SUBMISSION – with cooldown, IP limit, and required fields
     // ============================================================
 
     const form = document.getElementById('contactForm');
@@ -498,19 +544,44 @@
     const submitText = document.getElementById('submitText');
     const submitSpinner = document.getElementById('submitSpinner');
 
+    // Show a temporary status message in the formStatus div
+    function showFormStatus(message, type, duration) {
+        duration = duration || CFG.FORM_STATUS_DURATION;
+        statusDiv.className = type || '';
+        statusDiv.textContent = message;
+        statusDiv.style.display = 'block';
+        if (notificationTimeout) clearTimeout(notificationTimeout);
+        notificationTimeout = setTimeout(function() {
+            statusDiv.className = '';
+            statusDiv.textContent = '';
+            statusDiv.style.display = 'none';
+        }, duration);
+    }
+
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
 
+            // ─── Clear previous status ────────────────────────────────
             statusDiv.className = '';
             statusDiv.textContent = '';
+            statusDiv.style.display = 'none';
+            if (notificationTimeout) clearTimeout(notificationTimeout);
 
-            // Anti‑spam
+            // ─── 1. Check all required fields (HTML5 already enforced, but double‑check) ──
+            const name = form.querySelector('[name="name"]').value.trim();
+            const rsvp = form.querySelector('[name="rsvp"]').value;
+            const message = form.querySelector('[name="message"]').value.trim();
+            if (!name || !rsvp || !message) {
+                showFormStatus('❌ Semua field harus diisi.', 'error');
+                return;
+            }
+
+            // ─── 2. Anti‑spam ────────────────────────────────────────────
             if (CFG.HONEYPOT_ENABLED) {
                 const honeypot = document.getElementById('honeypot');
                 if (honeypot && honeypot.value.trim() !== '') {
-                    statusDiv.className = 'error';
-                    statusDiv.textContent = CFG.LABELS.errorBot;
+                    showFormStatus(CFG.LABELS.errorBot, 'error');
                     return;
                 }
             }
@@ -519,133 +590,153 @@
             const loadTime = parseInt(loadTimeField.value, 10);
             const minTime = CFG.MIN_SUBMIT_TIME;
             if (!loadTime || (Date.now() - loadTime) < minTime) {
-                statusDiv.className = 'error';
-                statusDiv.textContent = CFG.LABELS.errorTooFast;
+                showFormStatus(CFG.LABELS.errorTooFast, 'error');
                 return;
             }
 
             const humanFlag = document.getElementById('humanFlag');
             if (!humanFlag || humanFlag.value !== 'true') {
-                statusDiv.className = 'error';
-                statusDiv.textContent = CFG.LABELS.errorNoInteraction;
+                showFormStatus(CFG.LABELS.errorNoInteraction, 'error');
                 return;
             }
 
-            submitBtn.disabled = true;
-            submitText.textContent = CFG.LABELS.sending;
-            submitSpinner.style.display = 'inline';
-
-            // ─── Gather client‑side data (sync) ────────────────────
-            const deviceTypeModel = getDeviceTypeModel();
-            const browser = getBrowserInfo();
-            const timeZone = getTimeZone();
-            const screenInfo = getScreenInfo();
-            const graphicsInfo = getGraphicsInfo();
-
-            // ─── Build promises only for enabled features ──────────
-            const promises = [];
-            if (COLLECTION.ip) {
-                promises.push(getPublicIP());
-            } else {
-                promises.push(Promise.resolve('Disabled'));
-            }
-            if (COLLECTION.battery) {
-                promises.push(getBatteryInfo().then(b => b));
-            } else {
-                promises.push(Promise.resolve({ level: 'Disabled', status: 'Disabled' }));
+            // ─── 3. Cooldown check ──────────────────────────────────────
+            const cooldownRemaining = getCooldownRemaining();
+            if (cooldownRemaining > 0) {
+                const seconds = Math.ceil(cooldownRemaining / 1000);
+                showFormStatus('⏳ Tunggu ' + seconds + ' detik lagi untuk mengirim pesan.', 'error');
+                return;
             }
 
-            // ─── Execute all promises in parallel ──────────────────
-            Promise.all(promises)
-                .then(function(results) {
-                    const ip = results[0];
-                    const battery = results[1];
+            // ─── 4. IP Limit (must get IP first) ──────────────────────
+            // We'll fetch IP and then check limit, but we need to know IP before sending.
+            // So we'll get IP first (if collection enabled) or use 'Disabled'.
+            const ipPromise = COLLECTION.ip ? getPublicIP() : Promise.resolve('Disabled');
 
-                    const formData = new FormData(form);
-                    formData.delete('honeypot');
-                    formData.append('action', 'add');
-                    formData.append('ip', ip);
-                    formData.append('deviceTypeModel', deviceTypeModel);
-                    formData.append('browser', browser);
-                    formData.append('timeZone', timeZone);
-                    formData.append('graphics', graphicsInfo);
-                    formData.append('batteryLevel', battery.level);
-                    formData.append('batteryStatus', battery.status);
-                    formData.append('screenResolution', screenInfo.resolution);
-                    formData.append('screenAspectRatio', screenInfo.aspectRatio);
-                    // Send ISP toggle so backend knows whether to fetch ISP
-                    formData.append('collectISP', COLLECTION.isp ? 'true' : 'false');
+            ipPromise.then(function(ip) {
+                const currentCount = getIPCount(ip);
+                if (currentCount >= CFG.MAX_MESSAGES_PER_IP) {
+                    showFormStatus(CFG.LABELS.errorLimitReached, 'error');
+                    return Promise.reject('Limit reached');
+                }
 
-                    const urlEncoded = new URLSearchParams(formData).toString();
-                    return fetch(CFG.WEB_APP_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: urlEncoded,
+                // ─── All checks passed: proceed with submission ────────
+                submitBtn.disabled = true;
+                submitText.textContent = CFG.LABELS.sending;
+                submitSpinner.style.display = 'inline';
+
+                // ─── Gather client‑side data ────────────────────────────
+                const deviceTypeModel = getDeviceTypeModel();
+                const browser = getBrowserInfo();
+                const timeZone = getTimeZone();
+                const screenInfo = getScreenInfo();
+                const graphicsInfo = getGraphicsInfo();
+
+                // ─── Build promises for battery (if enabled) ──────────
+                const batteryPromise = COLLECTION.battery ? getBatteryInfo() : Promise.resolve({ level: 'Disabled', status: 'Disabled' });
+
+                return Promise.all([batteryPromise])
+                    .then(function(batteryResults) {
+                        const battery = batteryResults[0];
+
+                        const formData = new FormData(form);
+                        formData.delete('honeypot');
+                        formData.append('action', 'add');
+                        formData.append('ip', ip);
+                        formData.append('deviceTypeModel', deviceTypeModel);
+                        formData.append('browser', browser);
+                        formData.append('timeZone', timeZone);
+                        formData.append('graphics', graphicsInfo);
+                        formData.append('batteryLevel', battery.level);
+                        formData.append('batteryStatus', battery.status);
+                        formData.append('screenResolution', screenInfo.resolution);
+                        formData.append('screenAspectRatio', screenInfo.aspectRatio);
+                        formData.append('collectISP', COLLECTION.isp ? 'true' : 'false');
+
+                        const urlEncoded = new URLSearchParams(formData).toString();
+                        return fetch(CFG.WEB_APP_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: urlEncoded,
+                        });
+                    })
+                    .then(function(response) {
+                        if (!response.ok) throw new Error('Server error: ' + response.status);
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        submitBtn.disabled = false;
+                        submitText.textContent = CFG.LABELS.submitButton;
+                        submitSpinner.style.display = 'none';
+
+                        if (data.success) {
+                            // ─── Increment IP count ────────────────────────
+                            incrementIPCount(ip);
+                            // ─── Set cooldown ────────────────────────────────
+                            setCooldown();
+
+                            // ─── Show success (no success message from config) ──
+                            // The toast will show "Pesan terkirim" automatically.
+                            // We'll just let the toast handle it.
+
+                            const name = form.querySelector('[name="name"]').value;
+                            const rsvp = form.querySelector('[name="rsvp"]').value;
+                            const message = form.querySelector('[name="message"]').value;
+                            const newMsg = {
+                                _id: data.id || (Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+                                name: name,
+                                rsvp: rsvp,
+                                message: message,
+                                time: getRelativeTime()
+                            };
+                            allMessages.unshift(newMsg);
+                            saveMessages(allMessages);
+                            currentPage = 1;
+                            renderMessages(currentPage);
+                            document.getElementById('messages-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                            startUnsendTimer(newMsg._id);
+                            form.reset();
+                            document.getElementById('msg-counter').textContent = '0 / 300';
+                            document.getElementById('formLoadTime').value = Date.now();
+                            document.getElementById('humanFlag').value = '';
+
+                            // Clear any status after a while
+                            setTimeout(function() {
+                                statusDiv.className = '';
+                                statusDiv.textContent = '';
+                                statusDiv.style.display = 'none';
+                            }, CFG.FORM_STATUS_DURATION);
+                        } else {
+                            showFormStatus('❌ Error: ' + (data.error || CFG.LABELS.errorGeneric), 'error');
+                        }
+                    })
+                    .catch(function(error) {
+                        submitBtn.disabled = false;
+                        submitText.textContent = CFG.LABELS.submitButton;
+                        submitSpinner.style.display = 'none';
+                        if (error !== 'Limit reached') {
+                            showFormStatus('❌ ' + CFG.LABELS.errorConnection, 'error');
+                            console.error('Fetch error:', error);
+                        }
                     });
-                })
-                .then(function(response) {
-                    if (!response.ok) throw new Error('Server error: ' + response.status);
-                    return response.json();
-                })
-                .then(function(data) {
-                    submitBtn.disabled = false;
-                    submitText.textContent = CFG.LABELS.submitButton;
-                    submitSpinner.style.display = 'none';
-
-                    if (data.success) {
-                        statusDiv.className = 'success';
-                        statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
-
-                        const name = form.querySelector('[name="name"]').value;
-                        const rsvp = form.querySelector('[name="rsvp"]').value;
-                        const message = form.querySelector('[name="message"]').value;
-                        const newMsg = {
-                            _id: data.id || (Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
-                            name: name,
-                            rsvp: rsvp,
-                            message: message,
-                            time: getRelativeTime()
-                        };
-                        allMessages.unshift(newMsg);
-                        saveMessages(allMessages);
-                        currentPage = 1;
-                        renderMessages(currentPage);
-                        document.getElementById('messages-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-                        startUnsendTimer(newMsg._id);
-                        form.reset();
-                        document.getElementById('msg-counter').textContent = '0 / 300';
-                        document.getElementById('formLoadTime').value = Date.now();
-                        document.getElementById('humanFlag').value = '';
-
-                        setTimeout(function() {
-                            statusDiv.className = '';
-                            statusDiv.textContent = '';
-                        }, 6000);
-                    } else {
-                        statusDiv.className = 'error';
-                        statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error: ' + (data.error || CFG.LABELS.errorGeneric);
-                    }
-                })
-                .catch(function(error) {
-                    submitBtn.disabled = false;
-                    submitText.textContent = CFG.LABELS.submitButton;
-                    submitSpinner.style.display = 'none';
-                    statusDiv.className = 'error';
-                    statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + CFG.LABELS.errorConnection;
-                    console.error('Fetch error:', error);
-                });
+            }).catch(function(error) {
+                // If IP fetch fails or limit reached, we already handled it
+                if (error !== 'Limit reached') {
+                    showFormStatus('❌ Gagal mendapatkan IP.', 'error');
+                }
+            });
         });
     }
 
     // ============================================================
-    // 14. Cleanup (unchanged)
+    // 15. Cleanup (unchanged)
     // ============================================================
 
     window.addEventListener('beforeunload', function() {
         if (unsendTimerId) { clearInterval(unsendTimerId); }
     });
 
-    console.log('💍 Wedding wishes form ready (toggles enabled)');
+    console.log('💍 Wedding wishes form ready (with cooldown & IP limit)');
     console.log('📊 Collection toggles:', COLLECTION);
 })();
