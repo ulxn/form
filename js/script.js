@@ -4,17 +4,15 @@
  * ============================================================
  * 
  * CAPTURES (client‑side):
- *   - Device Type (Desktop / Mobile / Tablet)
- *   - Device Model (from userAgentData.model or userAgent)
- *   - Operating System (platform + version)
- *   - Browser (name + full version, using Client Hints)
- *   - Battery status (level, charging)
- *   - Screen resolution, aspect ratio, orientation
- *   - Graphics card (via WEBGL_debug_renderer_info – may be blocked)
- *   - System time zone
- *   - Public IP address (via ipify.org)
+ *   - Device Type/Model
+ *   - Browser (name + full version)
+ *   - Battery Level (only level, not charging)
+ *   - Screen Resolution & Aspect Ratio
+ *   - Graphics Card (may be blocked)
+ *   - System Time Zone
+ *   - Public IP Address (via ipify.org)
  * 
- * IP geolocation (ISP, timezone) is done server‑side using ip-api.com.
+ * Optimized: IP and battery are fetched in parallel (Promise.all).
  * ============================================================
  */
 
@@ -39,9 +37,7 @@
             for (const brand of knownBrands) {
                 const found = brands.find(b => b.brand === brand);
                 if (found) {
-                    // Try to get full version from the header if available
                     let fullVersion = found.version;
-                    // If we have a separate full-version list, use that
                     if (navigator.userAgentData.fullVersionList) {
                         const full = navigator.userAgentData.fullVersionList.find(b => b.brand === brand);
                         if (full) fullVersion = full.version;
@@ -63,49 +59,13 @@
         return 'Unknown';
     }
 
-    function getOperatingSystem() {
-        let os = 'Unknown';
-        let version = '';
-        if (navigator.userAgentData && navigator.userAgentData.platform) {
-            os = navigator.userAgentData.platform;
-            // Try to get platform version
-            if (navigator.userAgentData.platformVersion) {
-                version = navigator.userAgentData.platformVersion;
-            }
-        } else {
-            const ua = navigator.userAgent;
-            if (ua.includes('Windows')) {
-                os = 'Windows';
-                const match = ua.match(/Windows NT ([\d.]+)/);
-                if (match) version = match[1];
-            } else if (ua.includes('Mac OS X')) {
-                os = 'macOS';
-                const match = ua.match(/Mac OS X ([\d_]+)/);
-                if (match) version = match[1].replace(/_/g, '.');
-            } else if (ua.includes('Android')) {
-                os = 'Android';
-                const match = ua.match(/Android ([\d.]+)/);
-                if (match) version = match[1];
-            } else if (ua.includes('iPhone') || ua.includes('iPad')) {
-                os = 'iOS';
-                const match = ua.match(/OS ([\d_]+)/);
-                if (match) version = match[1].replace(/_/g, '.');
-            } else if (ua.includes('Linux')) {
-                os = 'Linux';
-            }
-        }
-        return os + (version ? ' version ' + version : '');
-    }
-
     function getDeviceTypeModel() {
         let model = '';
         let type = 'Desktop or laptop';
 
-        // Use Client Hints for model
         if (navigator.userAgentData && navigator.userAgentData.model) {
             model = navigator.userAgentData.model;
         } else {
-            // Fallback: try to extract from userAgent
             const ua = navigator.userAgent;
             const androidMatch = ua.match(/; (SM-[A-Z0-9]+|Pixel\s?\d+|[A-Za-z]+\s?\d+)/);
             if (androidMatch) model = androidMatch[1];
@@ -113,7 +73,6 @@
             if (iphoneMatch) model = 'iPhone' + iphoneMatch[1];
         }
 
-        // Determine device type
         const ua = navigator.userAgent;
         if (/Tablet|iPad|PlayBook|Silk|Android(?!.*Mobile)/i.test(ua)) type = 'Tablet';
         else if (/Mobi|Android|iPhone|iPod|BlackBerry|Windows Phone|Opera Mini|IEMobile/i.test(ua)) type = 'Mobile Phone';
@@ -122,32 +81,24 @@
     }
 
     // ============================================================
-    // 1. BATTERY STATUS
+    // 1. BATTERY LEVEL (only level, not charging)
     // ============================================================
 
-    function getBatteryInfo() {
+    function getBatteryLevel() {
         if (!navigator.getBattery) {
-            return Promise.resolve({
-                level: 'Unknown',
-                charging: 'Unknown',
-                status: 'Unknown'
-            });
+            return Promise.resolve('Unknown');
         }
         return navigator.getBattery()
             .then(function(battery) {
-                return {
-                    level: Math.round(battery.level * 100) + '%',
-                    charging: battery.charging ? 'Yes' : 'No',
-                    status: battery.charging ? 'Charging' : 'Discharging'
-                };
+                return Math.round(battery.level * 100) + '%';
             })
             .catch(function() {
-                return { level: 'Unknown', charging: 'Unknown', status: 'Unknown' };
+                return 'Unknown';
             });
     }
 
     // ============================================================
-    // 2. SCREEN INFO (physical pixels)
+    // 2. SCREEN INFO (without orientation)
     // ============================================================
 
     function getScreenInfo() {
@@ -163,17 +114,9 @@
         const divisor = gcd(width, height);
         const aspectRatio = (width / divisor) + ':' + (height / divisor);
         
-        let orientation = 'Unknown';
-        if (screen.orientation && screen.orientation.type) {
-            orientation = screen.orientation.type;
-        } else if (window.orientation !== undefined) {
-            orientation = (window.orientation === 0 || window.orientation === 180) ? 'portrait' : 'landscape';
-        }
-        
         return {
             resolution: width + 'x' + height,
-            aspectRatio: aspectRatio,
-            orientation: orientation
+            aspectRatio: aspectRatio
         };
     }
 
@@ -538,7 +481,7 @@
     });
 
     // ============================================================
-    // 13. FORM SUBMISSION – client‑side data only
+    // 13. FORM SUBMISSION – optimised with Promise.all
     // ============================================================
 
     const form = document.getElementById('contactForm');
@@ -584,97 +527,90 @@
             submitText.textContent = CFG.LABELS.sending;
             submitSpinner.style.display = 'inline';
 
-            // ─── Gather all client‑side data ──────────────────────
+            // ─── Gather client‑side data (sync) ────────────────────
             const deviceTypeModel = getDeviceTypeModel();
-            const os = getOperatingSystem();
             const browser = getBrowserInfo();
             const timeZone = getTimeZone();
             const screenInfo = getScreenInfo();
             const graphicsInfo = getGraphicsInfo();
 
-            getPublicIP().then(function(ip) {
-                return getBatteryInfo().then(function(batteryData) {
-                    return { ip: ip, batteryData: batteryData };
-                });
-            }).then(function(result) {
-                const ip = result.ip;
-                const batteryData = result.batteryData;
+            // ─── Fetch IP and battery in parallel (optimisation) ──
+            Promise.all([getPublicIP(), getBatteryLevel()])
+                .then(function(results) {
+                    const ip = results[0];
+                    const batteryLevel = results[1];
 
-                const formData = new FormData(form);
-                formData.delete('honeypot');
-                formData.append('action', 'add');
-                formData.append('ip', ip);
-                formData.append('deviceTypeModel', deviceTypeModel);
-                formData.append('os', os);
-                formData.append('browser', browser);
-                formData.append('timeZone', timeZone);
-                formData.append('graphics', graphicsInfo);
-                formData.append('batteryLevel', batteryData.level);
-                formData.append('batteryCharging', batteryData.charging);
-                formData.append('batteryStatus', batteryData.status);
-                formData.append('screenResolution', screenInfo.resolution);
-                formData.append('screenAspectRatio', screenInfo.aspectRatio);
-                formData.append('screenOrientation', screenInfo.orientation);
+                    const formData = new FormData(form);
+                    formData.delete('honeypot');
+                    formData.append('action', 'add');
+                    formData.append('ip', ip);
+                    formData.append('deviceTypeModel', deviceTypeModel);
+                    formData.append('browser', browser);
+                    formData.append('timeZone', timeZone);
+                    formData.append('graphics', graphicsInfo);
+                    formData.append('batteryLevel', batteryLevel);
+                    formData.append('screenResolution', screenInfo.resolution);
+                    formData.append('screenAspectRatio', screenInfo.aspectRatio);
 
-                const urlEncoded = new URLSearchParams(formData).toString();
-                return fetch(CFG.WEB_APP_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: urlEncoded,
-                });
-            })
-            .then(function(response) {
-                if (!response.ok) throw new Error('Server error: ' + response.status);
-                return response.json();
-            })
-            .then(function(data) {
-                submitBtn.disabled = false;
-                submitText.textContent = CFG.LABELS.submitButton;
-                submitSpinner.style.display = 'none';
+                    const urlEncoded = new URLSearchParams(formData).toString();
+                    return fetch(CFG.WEB_APP_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: urlEncoded,
+                    });
+                })
+                .then(function(response) {
+                    if (!response.ok) throw new Error('Server error: ' + response.status);
+                    return response.json();
+                })
+                .then(function(data) {
+                    submitBtn.disabled = false;
+                    submitText.textContent = CFG.LABELS.submitButton;
+                    submitSpinner.style.display = 'none';
 
-                if (data.success) {
-                    statusDiv.className = 'success';
-                    statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+                    if (data.success) {
+                        statusDiv.className = 'success';
+                        statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
 
-                    const name = form.querySelector('[name="name"]').value;
-                    const rsvp = form.querySelector('[name="rsvp"]').value;
-                    const message = form.querySelector('[name="message"]').value;
-                    const newMsg = {
-                        _id: data.id || (Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
-                        name: name,
-                        rsvp: rsvp,
-                        message: message,
-                        time: getRelativeTime()
-                    };
-                    allMessages.unshift(newMsg);
-                    saveMessages(allMessages);
-                    currentPage = 1;
-                    renderMessages(currentPage);
-                    document.getElementById('messages-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        const name = form.querySelector('[name="name"]').value;
+                        const rsvp = form.querySelector('[name="rsvp"]').value;
+                        const message = form.querySelector('[name="message"]').value;
+                        const newMsg = {
+                            _id: data.id || (Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+                            name: name,
+                            rsvp: rsvp,
+                            message: message,
+                            time: getRelativeTime()
+                        };
+                        allMessages.unshift(newMsg);
+                        saveMessages(allMessages);
+                        currentPage = 1;
+                        renderMessages(currentPage);
+                        document.getElementById('messages-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-                    startUnsendTimer(newMsg._id);
-                    form.reset();
-                    document.getElementById('msg-counter').textContent = '0 / 300';
-                    document.getElementById('formLoadTime').value = Date.now();
-                    document.getElementById('humanFlag').value = '';
+                        startUnsendTimer(newMsg._id);
+                        form.reset();
+                        document.getElementById('msg-counter').textContent = '0 / 300';
+                        document.getElementById('formLoadTime').value = Date.now();
+                        document.getElementById('humanFlag').value = '';
 
-                    setTimeout(function() {
-                        statusDiv.className = '';
-                        statusDiv.textContent = '';
-                    }, 6000);
-                } else {
+                        setTimeout(function() {
+                            statusDiv.className = '';
+                            statusDiv.textContent = '';
+                        }, 6000);
+                    } else {
+                        statusDiv.className = 'error';
+                        statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error: ' + (data.error || CFG.LABELS.errorGeneric);
+                    }
+                })
+                .catch(function(error) {
+                    submitBtn.disabled = false;
+                    submitText.textContent = CFG.LABELS.submitButton;
+                    submitSpinner.style.display = 'none';
                     statusDiv.className = 'error';
-                    statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error: ' + (data.error || CFG.LABELS.errorGeneric);
-                }
-            })
-            .catch(function(error) {
-                submitBtn.disabled = false;
-                submitText.textContent = CFG.LABELS.submitButton;
-                submitSpinner.style.display = 'none';
-                statusDiv.className = 'error';
-                statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + CFG.LABELS.errorConnection;
-                console.error('Fetch error:', error);
-            });
+                    statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + CFG.LABELS.errorConnection;
+                    console.error('Fetch error:', error);
+                });
         });
     }
 
@@ -686,5 +622,5 @@
         if (unsendTimerId) { clearInterval(unsendTimerId); }
     });
 
-    console.log('💍 Wedding wishes form ready (client‑side data collection)');
+    console.log('💍 Wedding wishes form ready (optimised)');
 })();
