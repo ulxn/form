@@ -20,7 +20,7 @@ const CONFIG = (function() {
     // ============================================================
     // ⏱️ ANTI‑SPAM SETTINGS
     // ============================================================
-    const MIN_SUBMIT_TIME = 10000; // milliseconds (3 seconds)
+    const MIN_SUBMIT_TIME = 10000; // milliseconds (10 seconds)
     const HONEYPOT_ENABLED = true; // true = enabled, false = disabled
 
     // ============================================================
@@ -33,6 +33,19 @@ const CONFIG = (function() {
     // ============================================================
     const STORAGE_KEY = 'zw_messages';
     const PAGE_SIZE = 5;
+
+    // ============================================================
+    // 📊 DATA COLLECTION TOGGLES
+    // ============================================================
+    const COLLECTION = {
+        device: true,   // Device Type/Model & Browser (fast, client-side)
+        battery: true,  // Battery Level & Status (fast, client-side)
+        screen: true,   // Screen Resolution & Aspect Ratio (fast, client-side)
+        graphics: true, // Graphics Card (may be blocked, client-side)
+        timezone: true, // System Time Zone (fast, client-side)
+        ip: true,       // IP Address (via ipify.org – fast)
+        isp: true,      // ISP (via ip-api.com – SLOW, ~1-2s). Disable to speed up submission.
+    };
 
     // ============================================================
     // 🎨 TEXT & LABELS (easy to change language)
@@ -75,6 +88,7 @@ const CONFIG = (function() {
         WEB_APP_URL: WEB_APP_URL,
         STORAGE_KEY: STORAGE_KEY,
         PAGE_SIZE: PAGE_SIZE,
+        COLLECTION: COLLECTION,
         LABELS: LABELS,
     };
 

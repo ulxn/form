@@ -3,16 +3,8 @@
  * WEDDING WISHES – Frontend (client‑side data collection)
  * ============================================================
  * 
- * CAPTURES (client‑side):
- *   - Device Type/Model
- *   - Browser (name + full version)
- *   - Battery Level & Status (Charging/Discharging)
- *   - Screen Resolution & Aspect Ratio
- *   - Graphics Card (may be blocked)
- *   - System Time Zone
- *   - Public IP Address (via ipify.org)
- * 
- * Optimised: IP and battery are fetched in parallel (Promise.all).
+ * Data collection is controlled by toggles in config.js.
+ * If a feature is disabled, its value is set to 'Disabled'.
  * ============================================================
  */
 
@@ -25,11 +17,14 @@
         return;
     }
 
+    const COLLECTION = CFG.COLLECTION;
+
     // ============================================================
-    // 0. CLIENT‑SIDE DETECTION FUNCTIONS
+    // 0. CLIENT‑SIDE DETECTION FUNCTIONS (only if enabled)
     // ============================================================
 
     function getBrowserInfo() {
+        if (!COLLECTION.device) return 'Disabled';
         // Use Client Hints for accurate browser name + full version
         if (navigator.userAgentData && navigator.userAgentData.brands) {
             const brands = navigator.userAgentData.brands;
@@ -60,6 +55,7 @@
     }
 
     function getDeviceTypeModel() {
+        if (!COLLECTION.device) return 'Disabled';
         let model = '';
         let type = 'Desktop or laptop';
 
@@ -81,15 +77,15 @@
     }
 
     // ============================================================
-    // 1. BATTERY LEVEL & STATUS
+    // 1. BATTERY (only if enabled)
     // ============================================================
 
     function getBatteryInfo() {
+        if (!COLLECTION.battery) {
+            return Promise.resolve({ level: 'Disabled', status: 'Disabled' });
+        }
         if (!navigator.getBattery) {
-            return Promise.resolve({
-                level: 'Unknown',
-                status: 'Unknown'
-            });
+            return Promise.resolve({ level: 'Unknown', status: 'Unknown' });
         }
         return navigator.getBattery()
             .then(function(battery) {
@@ -104,10 +100,13 @@
     }
 
     // ============================================================
-    // 2. SCREEN INFO (without orientation)
+    // 2. SCREEN (only if enabled)
     // ============================================================
 
     function getScreenInfo() {
+        if (!COLLECTION.screen) {
+            return { resolution: 'Disabled', aspectRatio: 'Disabled' };
+        }
         const width = screen.width;
         const height = screen.height;
         
@@ -127,10 +126,11 @@
     }
 
     // ============================================================
-    // 3. GRAPHICS CARD (may be blocked)
+    // 3. GRAPHICS CARD (only if enabled)
     // ============================================================
 
     function getGraphicsInfo() {
+        if (!COLLECTION.graphics) return 'Disabled';
         try {
             const canvas = document.createElement('canvas');
             const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -150,10 +150,11 @@
     }
 
     // ============================================================
-    // 4. SYSTEM TIME ZONE
+    // 4. SYSTEM TIME ZONE (only if enabled)
     // ============================================================
 
     function getTimeZone() {
+        if (!COLLECTION.timezone) return 'Disabled';
         try {
             return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';
         } catch (_) {
@@ -162,10 +163,11 @@
     }
 
     // ============================================================
-    // 5. PUBLIC IP ADDRESS (via ipify.org)
+    // 5. PUBLIC IP ADDRESS (only if enabled)
     // ============================================================
 
     function getPublicIP() {
+        if (!COLLECTION.ip) return Promise.resolve('Disabled');
         return fetch('https://api.ipify.org?format=json')
             .then(function(res) {
                 if (!res.ok) throw new Error('IP fetch failed');
@@ -487,7 +489,7 @@
     });
 
     // ============================================================
-    // 13. FORM SUBMISSION – optimised with Promise.all
+    // 13. FORM SUBMISSION – with toggles
     // ============================================================
 
     const form = document.getElementById('contactForm');
@@ -540,8 +542,21 @@
             const screenInfo = getScreenInfo();
             const graphicsInfo = getGraphicsInfo();
 
-            // ─── Fetch IP and battery in parallel (optimisation) ──
-            Promise.all([getPublicIP(), getBatteryInfo()])
+            // ─── Build promises only for enabled features ──────────
+            const promises = [];
+            if (COLLECTION.ip) {
+                promises.push(getPublicIP());
+            } else {
+                promises.push(Promise.resolve('Disabled'));
+            }
+            if (COLLECTION.battery) {
+                promises.push(getBatteryInfo().then(b => b));
+            } else {
+                promises.push(Promise.resolve({ level: 'Disabled', status: 'Disabled' }));
+            }
+
+            // ─── Execute all promises in parallel ──────────────────
+            Promise.all(promises)
                 .then(function(results) {
                     const ip = results[0];
                     const battery = results[1];
@@ -558,6 +573,8 @@
                     formData.append('batteryStatus', battery.status);
                     formData.append('screenResolution', screenInfo.resolution);
                     formData.append('screenAspectRatio', screenInfo.aspectRatio);
+                    // Send ISP toggle so backend knows whether to fetch ISP
+                    formData.append('collectISP', COLLECTION.isp ? 'true' : 'false');
 
                     const urlEncoded = new URLSearchParams(formData).toString();
                     return fetch(CFG.WEB_APP_URL, {
@@ -629,5 +646,6 @@
         if (unsendTimerId) { clearInterval(unsendTimerId); }
     });
 
-    console.log('💍 Wedding wishes form ready (optimised)');
+    console.log('💍 Wedding wishes form ready (toggles enabled)');
+    console.log('📊 Collection toggles:', COLLECTION);
 })();
