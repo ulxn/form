@@ -338,29 +338,31 @@
 
     function fetchMessages() {
         const url = CFG.WEB_APP_URL;
+        console.log('🔍 fetchMessages() called. URL:', url);
+
         if (!url || url === 'YOUR_ACTUAL_APPS_SCRIPT_WEB_APP_URL') {
             console.warn('⚠️ WEB_APP_URL not configured. Please set it in config.js');
-            // Show empty state with a message
             allMessages = [];
             currentPage = 1;
             renderMessages(currentPage);
             return;
         }
 
+        console.log('📡 Fetching messages from:', url);
         fetch(url, {
             method: 'GET',
             headers: { 'Accept': 'application/json' }
         })
         .then(function(response) {
+            console.log('📥 Response status:', response.status);
             if (!response.ok) {
                 throw new Error('HTTP ' + response.status + ' - ' + response.statusText);
             }
             return response.json();
         })
         .then(function(serverData) {
-            // Check if the response is an array (expected) or an error object
+            console.log('📦 Server data received:', serverData);
             if (!Array.isArray(serverData)) {
-                // If it's an error object, throw with the error message
                 if (serverData && serverData.error) {
                     throw new Error('Server error: ' + serverData.error);
                 } else {
@@ -368,7 +370,6 @@
                 }
             }
 
-            // Merge with pending messages
             const pending = getPendingMessages();
             const serverIds = serverData.map(function(m) { return m.id; });
             const pendingToShow = pending.filter(function(m) {
@@ -398,30 +399,30 @@
             all.sort(function(a, b) {
                 return new Date(b.time) - new Date(a.time);
             });
-            // Save to storage and render
             try {
                 localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(all));
             } catch (_) {}
             allMessages = all;
             currentPage = 1;
             renderMessages(currentPage);
+            console.log('✅ Messages rendered successfully. Count:', allMessages.length);
         })
         .catch(function(error) {
-            console.error('❌ Failed to fetch messages:', error);
-            // Try to load from localStorage as fallback
+            console.error('❌ Fetch error:', error);
             try {
                 const raw = localStorage.getItem(CFG.STORAGE_KEY);
                 if (raw) {
                     allMessages = JSON.parse(raw);
                     currentPage = 1;
                     renderMessages(currentPage);
+                    console.log('📂 Loaded from localStorage. Count:', allMessages.length);
                     return;
                 }
             } catch (_) {}
-            // No data available – show empty state
             allMessages = [];
             currentPage = 1;
             renderMessages(currentPage);
+            console.log('📭 No data – showing empty state.');
         });
     }
 
@@ -454,12 +455,25 @@
     function renderMessages(page) {
         const listEl = document.getElementById('message-list');
         const countEl = document.getElementById('messages-count');
+
+        // ─── Debug: log what we have ──────────────────────────────────
+        console.log('🔍 renderMessages() called.');
+        console.log('📋 allMessages length:', allMessages.length);
+        console.log('📋 listEl found?', !!listEl);
+        console.log('📋 countEl found?', !!countEl);
+
+        if (!listEl) {
+            console.error('❌ message-list element not found!');
+            return;
+        }
+
         const total = allMessages.length;
         countEl.textContent = total + (total === 1 ? ' pesan' : ' pesan');
 
         if (total === 0) {
             listEl.innerHTML = '<div class="empty-state"><i class="fas fa-envelope-open-text"></i>' + CFG.LABELS.emptyState + '</div>';
             document.getElementById('pagination').innerHTML = '';
+            console.log('📭 Empty state rendered.');
             return;
         }
 
@@ -469,6 +483,8 @@
         currentPage = page;
         const start = (page - 1) * PAGE_SIZE;
         const pageItems = allMessages.slice(start, start + PAGE_SIZE);
+
+        console.log('📝 Rendering', pageItems.length, 'messages on page', page);
 
         listEl.innerHTML = pageItems.map(function(m, i) {
             const rsvpClass = m.rsvp === 'Hadir' ? 'hadir' : 'belum';
@@ -502,7 +518,9 @@
             );
         }).join('');
 
-        // Attach retry listeners
+        console.log('✅ HTML updated. InnerHTML length:', listEl.innerHTML.length);
+
+        // ─── Attach retry listeners ──────────────────────────────────
         listEl.querySelectorAll('.retry-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 const id = this.getAttribute('data-id');
