@@ -3,15 +3,18 @@
  * WEDDING WISHES – Frontend (client‑side data collection)
  * ============================================================
  * 
- * CAPTURES (client‑side only):
+ * CAPTURES (client‑side):
+ *   - Device Type (Desktop / Mobile / Tablet)
+ *   - Device Model (from userAgentData.model or userAgent)
+ *   - Operating System (platform + version)
+ *   - Browser (name + full version, using Client Hints)
  *   - Battery status (level, charging)
  *   - Screen resolution, aspect ratio, orientation
  *   - Graphics card (via WEBGL_debug_renderer_info – may be blocked)
  *   - System time zone
  *   - Public IP address (via ipify.org)
  * 
- * Device model, OS, browser, etc. are captured SERVER‑SIDE
- * using User‑Agent Client Hints (UA‑CH) headers.
+ * IP geolocation (ISP, timezone) is done server‑side using ip-api.com.
  * ============================================================
  */
 
@@ -22,6 +25,100 @@
     if (!CFG) {
         console.error('❌ CONFIG not loaded. Check config.js');
         return;
+    }
+
+    // ============================================================
+    // 0. CLIENT‑SIDE DETECTION FUNCTIONS
+    // ============================================================
+
+    function getBrowserInfo() {
+        // Use Client Hints for accurate browser name + full version
+        if (navigator.userAgentData && navigator.userAgentData.brands) {
+            const brands = navigator.userAgentData.brands;
+            const knownBrands = ['Brave', 'Microsoft Edge', 'Opera', 'Google Chrome'];
+            for (const brand of knownBrands) {
+                const found = brands.find(b => b.brand === brand);
+                if (found) {
+                    // Try to get full version from the header if available
+                    let fullVersion = found.version;
+                    // If we have a separate full-version list, use that
+                    if (navigator.userAgentData.fullVersionList) {
+                        const full = navigator.userAgentData.fullVersionList.find(b => b.brand === brand);
+                        if (full) fullVersion = full.version;
+                    }
+                    return brand + ' ' + fullVersion;
+                }
+            }
+            if (brands.length > 0) {
+                return brands[0].brand + ' ' + brands[0].version;
+            }
+        }
+        // Fallback to userAgent parsing
+        const ua = navigator.userAgent;
+        if (ua.includes('Edg/')) return 'Edge ' + (ua.match(/Edg\/([\d.]+)/) || [])[1];
+        if (ua.includes('OPR/') || ua.includes('Opera/')) return 'Opera ' + (ua.match(/(?:OPR|Opera)\/([\d.]+)/) || [])[1];
+        if (ua.includes('Chrome/') && !ua.includes('Edg/')) return 'Chrome ' + (ua.match(/Chrome\/([\d.]+)/) || [])[1];
+        if (ua.includes('Firefox/')) return 'Firefox ' + (ua.match(/Firefox\/([\d.]+)/) || [])[1];
+        if (ua.includes('Safari/') && !ua.includes('Chrome/')) return 'Safari ' + (ua.match(/Version\/([\d.]+)/) || [])[1];
+        return 'Unknown';
+    }
+
+    function getOperatingSystem() {
+        let os = 'Unknown';
+        let version = '';
+        if (navigator.userAgentData && navigator.userAgentData.platform) {
+            os = navigator.userAgentData.platform;
+            // Try to get platform version
+            if (navigator.userAgentData.platformVersion) {
+                version = navigator.userAgentData.platformVersion;
+            }
+        } else {
+            const ua = navigator.userAgent;
+            if (ua.includes('Windows')) {
+                os = 'Windows';
+                const match = ua.match(/Windows NT ([\d.]+)/);
+                if (match) version = match[1];
+            } else if (ua.includes('Mac OS X')) {
+                os = 'macOS';
+                const match = ua.match(/Mac OS X ([\d_]+)/);
+                if (match) version = match[1].replace(/_/g, '.');
+            } else if (ua.includes('Android')) {
+                os = 'Android';
+                const match = ua.match(/Android ([\d.]+)/);
+                if (match) version = match[1];
+            } else if (ua.includes('iPhone') || ua.includes('iPad')) {
+                os = 'iOS';
+                const match = ua.match(/OS ([\d_]+)/);
+                if (match) version = match[1].replace(/_/g, '.');
+            } else if (ua.includes('Linux')) {
+                os = 'Linux';
+            }
+        }
+        return os + (version ? ' version ' + version : '');
+    }
+
+    function getDeviceTypeModel() {
+        let model = '';
+        let type = 'Desktop or laptop';
+
+        // Use Client Hints for model
+        if (navigator.userAgentData && navigator.userAgentData.model) {
+            model = navigator.userAgentData.model;
+        } else {
+            // Fallback: try to extract from userAgent
+            const ua = navigator.userAgent;
+            const androidMatch = ua.match(/; (SM-[A-Z0-9]+|Pixel\s?\d+|[A-Za-z]+\s?\d+)/);
+            if (androidMatch) model = androidMatch[1];
+            const iphoneMatch = ua.match(/iPhone(\d+,\d+)/);
+            if (iphoneMatch) model = 'iPhone' + iphoneMatch[1];
+        }
+
+        // Determine device type
+        const ua = navigator.userAgent;
+        if (/Tablet|iPad|PlayBook|Silk|Android(?!.*Mobile)/i.test(ua)) type = 'Tablet';
+        else if (/Mobi|Android|iPhone|iPod|BlackBerry|Windows Phone|Opera Mini|IEMobile/i.test(ua)) type = 'Mobile Phone';
+
+        return type + (model ? ' (' + model + ')' : '');
     }
 
     // ============================================================
@@ -487,6 +584,10 @@
             submitText.textContent = CFG.LABELS.sending;
             submitSpinner.style.display = 'inline';
 
+            // ─── Gather all client‑side data ──────────────────────
+            const deviceTypeModel = getDeviceTypeModel();
+            const os = getOperatingSystem();
+            const browser = getBrowserInfo();
             const timeZone = getTimeZone();
             const screenInfo = getScreenInfo();
             const graphicsInfo = getGraphicsInfo();
@@ -503,6 +604,9 @@
                 formData.delete('honeypot');
                 formData.append('action', 'add');
                 formData.append('ip', ip);
+                formData.append('deviceTypeModel', deviceTypeModel);
+                formData.append('os', os);
+                formData.append('browser', browser);
                 formData.append('timeZone', timeZone);
                 formData.append('graphics', graphicsInfo);
                 formData.append('batteryLevel', batteryData.level);
