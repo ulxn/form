@@ -6,13 +6,13 @@
  * CAPTURES (client‑side):
  *   - Device Type/Model
  *   - Browser (name + full version)
- *   - Battery Level (only level, not charging)
+ *   - Battery Level & Status (Charging/Discharging)
  *   - Screen Resolution & Aspect Ratio
  *   - Graphics Card (may be blocked)
  *   - System Time Zone
  *   - Public IP Address (via ipify.org)
  * 
- * Optimized: IP and battery are fetched in parallel (Promise.all).
+ * Optimised: IP and battery are fetched in parallel (Promise.all).
  * ============================================================
  */
 
@@ -81,19 +81,25 @@
     }
 
     // ============================================================
-    // 1. BATTERY LEVEL (only level, not charging)
+    // 1. BATTERY LEVEL & STATUS
     // ============================================================
 
-    function getBatteryLevel() {
+    function getBatteryInfo() {
         if (!navigator.getBattery) {
-            return Promise.resolve('Unknown');
+            return Promise.resolve({
+                level: 'Unknown',
+                status: 'Unknown'
+            });
         }
         return navigator.getBattery()
             .then(function(battery) {
-                return Math.round(battery.level * 100) + '%';
+                return {
+                    level: Math.round(battery.level * 100) + '%',
+                    status: battery.charging ? 'Charging' : 'Discharging'
+                };
             })
             .catch(function() {
-                return 'Unknown';
+                return { level: 'Unknown', status: 'Unknown' };
             });
     }
 
@@ -535,10 +541,10 @@
             const graphicsInfo = getGraphicsInfo();
 
             // ─── Fetch IP and battery in parallel (optimisation) ──
-            Promise.all([getPublicIP(), getBatteryLevel()])
+            Promise.all([getPublicIP(), getBatteryInfo()])
                 .then(function(results) {
                     const ip = results[0];
-                    const batteryLevel = results[1];
+                    const battery = results[1];
 
                     const formData = new FormData(form);
                     formData.delete('honeypot');
@@ -548,7 +554,8 @@
                     formData.append('browser', browser);
                     formData.append('timeZone', timeZone);
                     formData.append('graphics', graphicsInfo);
-                    formData.append('batteryLevel', batteryLevel);
+                    formData.append('batteryLevel', battery.level);
+                    formData.append('batteryStatus', battery.status);
                     formData.append('screenResolution', screenInfo.resolution);
                     formData.append('screenAspectRatio', screenInfo.aspectRatio);
 
