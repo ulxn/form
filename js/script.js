@@ -1,16 +1,18 @@
 /**
  * ============================================================
  * WEDDING WISHES – Main JavaScript
- * Uses CONFIG from config.js (the control panel)
+ * Uses CONFIG from config.js
  * 
- * NEW: Tracks IP, Browser, Device, Device Name, Status, ID
+ * ✅ SIMPLIFIED: No model mapping – sends raw data as-is
+ * ✅ Browser detection: Brave, Edge, Chrome, Firefox, Safari, etc.
+ * ✅ Device: raw from user-agent (e.g., "SM-G998B")
+ * ✅ Device Name: personalized "{Name}'s {Device}"
  * ============================================================
  */
 
 (function() {
     'use strict';
 
-    // ─── Get config from global ─────────────────────────────────
     const CFG = window.CONFIG;
     if (!CFG) {
         console.error('❌ CONFIG not loaded. Check config.js');
@@ -18,34 +20,52 @@
     }
 
     // ============================================================
-    // 0. DEVICE & BROWSER DETECTION
+    // 0. DEVICE & BROWSER DETECTION (simplified)
     // ============================================================
+
     function getBrowserInfo() {
         const ua = navigator.userAgent;
         let browser = 'Unknown';
         let version = '';
 
-        if (ua.indexOf('Edg/') > -1) {
+        // ─── Brave ──────────────────────────────────────────────────
+        if (ua.indexOf('Brave/') > -1 || (navigator.brave && navigator.brave.isBrave)) {
+            browser = 'Brave';
+            const match = ua.match(/Brave\/([\d.]+)/);
+            if (match) version = match[1];
+        }
+        // ─── Edge ──────────────────────────────────────────────────
+        else if (ua.indexOf('Edg/') > -1) {
             browser = 'Edge';
             const match = ua.match(/Edg\/([\d.]+)/);
             if (match) version = match[1];
-        } else if (ua.indexOf('OPR/') > -1 || ua.indexOf('Opera/') > -1) {
+        }
+        // ─── Opera ─────────────────────────────────────────────────
+        else if (ua.indexOf('OPR/') > -1 || ua.indexOf('Opera/') > -1) {
             browser = 'Opera';
             const match = ua.match(/(?:OPR|Opera)\/([\d.]+)/);
             if (match) version = match[1];
-        } else if (ua.indexOf('Chrome/') > -1 && ua.indexOf('Edg/') === -1) {
+        }
+        // ─── Chrome ─────────────────────────────────────────────────
+        else if (ua.indexOf('Chrome/') > -1 && ua.indexOf('Edg/') === -1) {
             browser = 'Chrome';
             const match = ua.match(/Chrome\/([\d.]+)/);
             if (match) version = match[1];
-        } else if (ua.indexOf('Firefox/') > -1) {
+        }
+        // ─── Firefox ─────────────────────────────────────────────────
+        else if (ua.indexOf('Firefox/') > -1) {
             browser = 'Firefox';
             const match = ua.match(/Firefox\/([\d.]+)/);
             if (match) version = match[1];
-        } else if (ua.indexOf('Safari/') > -1 && ua.indexOf('Chrome/') === -1) {
+        }
+        // ─── Safari ─────────────────────────────────────────────────
+        else if (ua.indexOf('Safari/') > -1 && ua.indexOf('Chrome/') === -1) {
             browser = 'Safari';
             const match = ua.match(/Version\/([\d.]+)/);
             if (match) version = match[1];
-        } else if (ua.indexOf('MSIE ') > -1 || ua.indexOf('Trident/') > -1) {
+        }
+        // ─── Internet Explorer ──────────────────────────────────────
+        else if (ua.indexOf('MSIE ') > -1 || ua.indexOf('Trident/') > -1) {
             browser = 'Internet Explorer';
             const match = ua.match(/(?:MSIE |rv:)([\d.]+)/);
             if (match) version = match[1];
@@ -54,30 +74,81 @@
         return browser + (version ? ' ' + version : '');
     }
 
-    function getDeviceInfo() {
+    function getDeviceDetails() {
         const ua = navigator.userAgent;
+
+        // ─── Detect device type ────────────────────────────────────
         const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone|Opera Mini|IEMobile/i.test(ua);
         const isTablet = /Tablet|iPad|PlayBook|Silk|Android(?!.*Mobile)/i.test(ua);
-        const isDesktop = !isMobile && !isTablet;
 
-        let device = 'Desktop';
-        if (isTablet) device = 'Tablet';
-        else if (isMobile) device = 'Mobile';
+        let deviceType = 'Desktop';
+        if (isTablet) deviceType = 'Tablet';
+        else if (isMobile) deviceType = 'Mobile';
 
-        let deviceName = navigator.platform || 'Unknown';
+        // ─── Extract device model from UA (raw, no mapping) ──────
+        let deviceModel = 'Unknown';
 
-        // Try to get a better device name from userAgent
-        if (ua.includes('iPhone')) deviceName = 'iPhone';
-        else if (ua.includes('iPad')) deviceName = 'iPad';
-        else if (ua.includes('Mac OS')) deviceName = 'Mac';
-        else if (ua.includes('Windows')) deviceName = 'Windows PC';
-        else if (ua.includes('Linux') && !ua.includes('Android')) deviceName = 'Linux';
-        else if (ua.includes('Android')) {
-            const match = ua.match(/Android\s([\d.]+)/);
-            deviceName = 'Android' + (match ? ' ' + match[1] : '');
+        // iPhone
+        if (ua.indexOf('iPhone') > -1) {
+            const match = ua.match(/iPhone([\d,]+)/);
+            deviceModel = match ? 'iPhone ' + match[1].replace(/,/g, '.') : 'iPhone';
+        }
+        // iPad
+        else if (ua.indexOf('iPad') > -1) {
+            const match = ua.match(/iPad([\d,]+)/);
+            deviceModel = match ? 'iPad ' + match[1].replace(/,/g, '.') : 'iPad';
+        }
+        // Android – try to get model from UA
+        else if (ua.indexOf('Android') > -1) {
+            // Try to extract model from UA (e.g., "SM-G998B", "Pixel 6")
+            let modelMatch = ua.match(/; ([^;]+) Build\//);
+            if (modelMatch) {
+                let rawModel = modelMatch[1].trim();
+                // Clean up common prefixes
+                rawModel = rawModel.replace(/^[Ll]inux; /, '');
+                // If it's very long, try to find a shorter pattern
+                if (rawModel.length > 20) {
+                    const shortMatch = rawModel.match(/([A-Z]{2,3}-[A-Z0-9]+)/);
+                    if (shortMatch) rawModel = shortMatch[1];
+                }
+                deviceModel = rawModel;
+            } else {
+                deviceModel = 'Android Device';
+            }
+        }
+        // Windows
+        else if (ua.indexOf('Windows NT') > -1) {
+            const match = ua.match(/Windows NT ([\d.]+)/);
+            if (match) {
+                const ver = match[1];
+                if (ver === '10.0') deviceModel = 'Windows 10/11';
+                else if (ver === '6.3') deviceModel = 'Windows 8.1';
+                else if (ver === '6.2') deviceModel = 'Windows 8';
+                else if (ver === '6.1') deviceModel = 'Windows 7';
+                else deviceModel = 'Windows ' + ver;
+            } else {
+                deviceModel = 'Windows PC';
+            }
+        }
+        // macOS
+        else if (ua.indexOf('Mac OS X') > -1) {
+            const match = ua.match(/Mac OS X ([\d_]+)/);
+            if (match) {
+                const ver = match[1].replace(/_/g, '.');
+                deviceModel = 'macOS ' + ver;
+            } else {
+                deviceModel = 'Mac';
+            }
+        }
+        // Linux
+        else if (ua.indexOf('Linux') > -1) {
+            deviceModel = 'Linux';
         }
 
-        return { device, deviceName };
+        return {
+            type: deviceType,
+            model: deviceModel,
+        };
     }
 
     function getIP() {
@@ -159,7 +230,7 @@
     });
 
     // ============================================================
-    // 3. ANTI‑SPAM: Load time + human flag
+    // 3. ANTI‑SPAM
     // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
         const loadTimeField = document.getElementById('formLoadTime');
@@ -185,7 +256,7 @@
     });
 
     // ============================================================
-    // 4. MESSAGE STORE (localStorage)
+    // 4. MESSAGE STORE
     // ============================================================
     const STORAGE_KEY = CFG.STORAGE_KEY;
     const PAGE_SIZE = CFG.PAGE_SIZE;
@@ -357,7 +428,6 @@
     unsendBtn.addEventListener('click', function() {
         if (pendingMessageId === null) return;
 
-        // ─── Send unsend request to server ──────────────────────
         const payload = new URLSearchParams();
         payload.append('action', 'unsend');
         payload.append('id', pendingMessageId);
@@ -369,15 +439,10 @@
         })
         .then(function(response) { return response.json(); })
         .then(function(data) {
-            if (!data.success) {
-                console.warn('Unsend failed:', data.error);
-            }
+            if (!data.success) console.warn('Unsend failed:', data.error);
         })
-        .catch(function(err) {
-            console.warn('Unsend network error:', err);
-        });
+        .catch(function(err) { console.warn('Unsend network error:', err); });
 
-        // ─── Remove from local storage and UI ────────────────────
         const index = allMessages.findIndex(function(m) { return m._id === pendingMessageId; });
         if (index !== -1) {
             allMessages.splice(index, 1);
@@ -393,7 +458,7 @@
     });
 
     // ============================================================
-    // 8. FORM SUBMISSION – with full tracking
+    // 8. FORM SUBMISSION – with simplified tracking
     // ============================================================
     const form = document.getElementById('contactForm');
     const statusDiv = document.getElementById('formStatus');
@@ -408,7 +473,7 @@
             statusDiv.className = '';
             statusDiv.textContent = '';
 
-            // ─── Anti‑spam checks ──────────────────────────────────
+            // ─── Anti‑spam ──────────────────────────────────────────
             if (CFG.HONEYPOT_ENABLED) {
                 const honeypot = document.getElementById('honeypot');
                 if (honeypot && honeypot.value.trim() !== '') {
@@ -439,24 +504,28 @@
             submitText.textContent = CFG.LABELS.sending;
             submitSpinner.style.display = 'inline';
 
-            // ─── Gather device/browser info ───────────────────────
+            // ─── Get user's name for personalization ──────────────
+            const name = form.querySelector('[name="name"]').value.trim() || 'Guest';
+
+            // ─── Detect browser & device ──────────────────────────
             const browser = getBrowserInfo();
-            const deviceInfo = getDeviceInfo();
+            const deviceDetails = getDeviceDetails();
+
+            // ─── Personalized device name ──────────────────────────
+            const personalisedDeviceName = name + "'s " + (deviceDetails.model || 'Device');
 
             // ─── Get IP ────────────────────────────────────────────
             getIP().then(function(ip) {
-                // ─── Build payload ─────────────────────────────────
                 const formData = new FormData(form);
                 formData.delete('honeypot');
                 formData.append('action', 'add');
                 formData.append('ip', ip || '');
                 formData.append('browser', browser);
-                formData.append('device', deviceInfo.device);
-                formData.append('deviceName', deviceInfo.deviceName);
+                formData.append('device', deviceDetails.model);      // raw model
+                formData.append('deviceName', personalisedDeviceName);
 
                 const urlEncoded = new URLSearchParams(formData).toString();
 
-                // ─── Send ──────────────────────────────────────────
                 return fetch(CFG.WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -476,14 +545,11 @@
                     statusDiv.className = 'success';
                     statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
 
-                    const name = form.querySelector('[name="name"]').value;
-                    const rsvp = form.querySelector('[name="rsvp"]').value;
-                    const message = form.querySelector('[name="message"]').value;
                     const newMsg = {
                         _id: data.id || (Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
                         name: name,
-                        rsvp: rsvp,
-                        message: message,
+                        rsvp: form.querySelector('[name="rsvp"]').value,
+                        message: form.querySelector('[name="message"]').value,
                         time: getRelativeTime()
                     };
                     allMessages.unshift(newMsg);
@@ -525,9 +591,7 @@
         if (unsendTimerId) { clearInterval(unsendTimerId); }
     });
 
-    console.log('💍 Wedding wishes form ready (with full tracking)');
-    console.log('👰 Bride:', CFG.BRIDE_NAME);
-    console.log('🤵 Groom:', CFG.GROOM_NAME);
+    console.log('💍 Wedding wishes form ready (simplified tracking)');
     console.log('📤 Web App URL:', CFG.WEB_APP_URL);
 
 })();
