@@ -22,7 +22,7 @@ const CONFIG = (function() {
     // ============================================================
     const MIN_SUBMIT_TIME = 10000; // milliseconds (10 seconds)
     const HONEYPOT_ENABLED = true; // true = enabled, false = disabled
- 
+
     // ============================================================
     // 🕒 COOLDOWN & LIMITS
     // ============================================================
@@ -35,7 +35,7 @@ const CONFIG = (function() {
     // ============================================================
     const FORM_STATUS_DURATION = 5000; // how long form status messages stay visible
     const NOTIFICATION_DURATION = 3000; // duration for notification toasts (except unsend)
- 
+
     // ============================================================
     // 📡 BACKEND URL
     // ============================================================

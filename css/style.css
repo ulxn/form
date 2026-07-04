@@ -54,7 +54,7 @@ h1, h2, h3 { font-family: 'Cormorant Garamond', serif; }
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-subtle);
-} 
+}
 .topbar .brand {
     display: flex;
     align-items: center;
@@ -213,14 +213,14 @@ textarea.field {
     display: flex;
     flex-direction: column;
     flex: 1;
-    min-height: 0; /* allows the card to shrink below content height */
+    min-height: 0;
 }
 
 .messages-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-shrink: 0; /* never shrinks */
+    flex-shrink: 0;
     margin-bottom: 14px;
 }
 .messages-header h2 {
@@ -237,31 +237,29 @@ textarea.field {
 
 /* ─── The scrollable list wrapper ─── */
 .message-list-wrap {
-    flex: 1 1 auto;          /* takes remaining space */
-    min-height: 0;           /* allows it to shrink */
-    overflow-y: auto;        /* shows scrollbar when content overflows */
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
     padding-right: 4px;
-    margin-right: -4px;      /* compensates for scrollbar gap */
-    -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
+    margin-right: -4px;
+    -webkit-overflow-scrolling: touch;
 }
 
 .message-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    min-height: 100%;        /* ensures empty state fills the space */
+    min-height: 100%;
 }
 
 /* ─── Desktop: force both columns to equal height ─── */
 @media (min-width: 900px) {
     .form-col,
     .messages-col {
-        flex: 1 1 0; /* equal width and height */
+        flex: 1 1 0;
     }
     .form-col { order: 2; }
     .messages-col { order: 1; }
-
-    /* Ensure the message list wrapper takes full height */
     .message-list-wrap {
         flex: 1 1 0;
         min-height: 0;
@@ -271,11 +269,11 @@ textarea.field {
 /* ─── Mobile: no forced height, no scrollbar ─── */
 @media (max-width: 899px) {
     .messages-col {
-        flex: 1 1 360px; /* natural height based on content */
+        flex: 1 1 360px;
         min-width: 260px;
     }
     .message-list-wrap {
-        overflow-y: visible; /* no scrollbar on mobile */
+        overflow-y: visible;
         flex: none;
         height: auto;
         padding-right: 0;
@@ -339,7 +337,7 @@ textarea.field {
     line-height: 1.5;
     margin-bottom: 6px;
     word-break: break-word;
-    white-space: pre-wrap; /* preserves line breaks */
+    white-space: pre-wrap;
 }
 
 .message-time {
