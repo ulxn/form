@@ -2,7 +2,7 @@
  * ============================================================
  * ═══ CONFIGURATION – CONTROL PANEL ═══
  * ============================================================
- * 
+ *  
  * 🔧 EDIT THIS FILE to customise the wedding wishes page.
  * All settings are in one place for easy management.
  * ============================================================
