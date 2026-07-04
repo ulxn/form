@@ -22,7 +22,7 @@ const CONFIG = (function() {
     // ============================================================
     const MIN_SUBMIT_TIME = 10000; // milliseconds (10 seconds)
     const HONEYPOT_ENABLED = true; // true = enabled, false = disabled
-
+ 
     // ============================================================
     // 🕒 COOLDOWN & LIMITS
     // ============================================================

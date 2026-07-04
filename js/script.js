@@ -549,7 +549,7 @@
 
         renderPagination(page, totalPages);
     }
-
+ 
     function renderPagination(page, totalPages) {
         const pagEl = document.getElementById('pagination');
         if (totalPages <= 1) { pagEl.innerHTML = ''; return; }
