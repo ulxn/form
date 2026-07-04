@@ -553,6 +553,10 @@
     function renderPagination(page, totalPages) {
         const pagEl = document.getElementById('pagination');
         if (totalPages <= 1) { pagEl.innerHTML = ''; return; }
+
+        // ─── Ensure PAGE_SIZE is a number ──────────────────────────
+        const pageSize = (typeof PAGE_SIZE === 'number' && PAGE_SIZE > 0) ? PAGE_SIZE : 5;
+
         let html = '';
         html += '<button class="page-btn" data-page="' + (page - 1) + '" ' + (page === 1 ? 'disabled' : '') + '><i class="fas fa-chevron-left"></i></button>';
         for (let p = 1; p <= totalPages; p++) {
@@ -560,14 +564,22 @@
         }
         html += '<button class="page-btn" data-page="' + (page + 1) + '" ' + (page === totalPages ? 'disabled' : '') + '><i class="fas fa-chevron-right"></i></button>';
         pagEl.innerHTML = html;
+
+        // ─── Attach click listeners ──────────────────────────────────
         pagEl.querySelectorAll('.page-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function(e) {
+                // Prevent any default action
+                e.preventDefault();
                 const p = parseInt(btn.getAttribute('data-page'), 10);
-                const total = Math.ceil(allMessages.length / PAGE_SIZE);
+                const total = Math.ceil(allMessages.length / pageSize);
                 if (!isNaN(p) && p >= 1 && p <= total) {
                     currentPage = p;
                     renderMessages(currentPage);
-                    document.getElementById('messages-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Scroll to the messages title
+                    const titleEl = document.getElementById('messages-title');
+                    if (titleEl) {
+                        titleEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
                 }
             });
         });
