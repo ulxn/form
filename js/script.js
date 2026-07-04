@@ -9,6 +9,7 @@
  *   - Draft saving to localStorage
  *   - Pending messages are stored and retried on page reload
  *   - No polling – quota efficient
+ *   - Improved error handling: if fetch fails, shows empty state
  * ============================================================
  */
 
@@ -182,7 +183,7 @@
     });
 
     // ============================================================
-    // 2. ANTI‑SPAM & DOM SETUP (unchanged)
+    // 2. ANTI‑SPAM & DOM SETUP
     // ============================================================
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -332,52 +333,68 @@
     }
 
     // ============================================================
-    // 6. FETCH MESSAGES FROM SERVER
+    // 6. FETCH MESSAGES FROM SERVER – with robust error handling
     // ============================================================
 
     function fetchMessages() {
-        fetch(CFG.WEB_APP_URL, {
+        const url = CFG.WEB_APP_URL;
+        if (!url || url === 'YOUR_ACTUAL_APPS_SCRIPT_WEB_APP_URL') {
+            console.warn('⚠️ WEB_APP_URL not configured. Please set it in config.js');
+            // Show empty state with a message
+            allMessages = [];
+            currentPage = 1;
+            renderMessages(currentPage);
+            return;
+        }
+
+        fetch(url, {
             method: 'GET',
             headers: { 'Accept': 'application/json' }
         })
         .then(function(response) {
-            if (!response.ok) throw new Error('HTTP ' + response.status);
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status + ' - ' + response.statusText);
+            }
             return response.json();
         })
-        .then(function(serverMessages) {
+        .then(function(serverData) {
+            // Check if the response is an array (expected) or an error object
+            if (!Array.isArray(serverData)) {
+                // If it's an error object, throw with the error message
+                if (serverData && serverData.error) {
+                    throw new Error('Server error: ' + serverData.error);
+                } else {
+                    throw new Error('Invalid response from server (not an array)');
+                }
+            }
+
             // Merge with pending messages
             const pending = getPendingMessages();
-            // Build a map of existing server message IDs
-            const serverIds = serverMessages.map(function(m) { return m.id; });
-            // Filter pending that are not already on server (i.e., not yet confirmed)
+            const serverIds = serverData.map(function(m) { return m.id; });
             const pendingToShow = pending.filter(function(m) {
                 return !serverIds.includes(m._id);
             });
-            // Convert pending to match UI format (add time if missing)
             const pendingUI = pendingToShow.map(function(m) {
                 return {
                     _id: m._id,
                     name: m.name,
                     rsvp: m.rsvp,
                     message: m.message,
-                    time: m.time || 'Baru saja',
+                    time: m.time || new Date().toISOString(),
                     status: 'pending'
                 };
             });
-            // Combine: server messages (sent) + pending
-            const combined = serverMessages.map(function(m) {
+            const combined = serverData.map(function(m) {
                 return {
                     _id: m.id,
                     name: m.name,
                     rsvp: m.rsvp,
                     message: m.message,
-                    time: m.time || 'Baru saja',
+                    time: m.time || new Date().toISOString(),
                     status: 'sent'
                 };
             });
-            // Add pending messages (they will have a retry button)
             const all = combined.concat(pendingUI);
-            // Sort by time (newest first)
             all.sort(function(a, b) {
                 return new Date(b.time) - new Date(a.time);
             });
@@ -390,16 +407,21 @@
             renderMessages(currentPage);
         })
         .catch(function(error) {
-            console.error('Failed to fetch messages:', error);
-            // If fetch fails, try to load from localStorage as fallback
+            console.error('❌ Failed to fetch messages:', error);
+            // Try to load from localStorage as fallback
             try {
                 const raw = localStorage.getItem(CFG.STORAGE_KEY);
                 if (raw) {
                     allMessages = JSON.parse(raw);
                     currentPage = 1;
                     renderMessages(currentPage);
+                    return;
                 }
             } catch (_) {}
+            // No data available – show empty state
+            allMessages = [];
+            currentPage = 1;
+            renderMessages(currentPage);
         });
     }
 
@@ -519,15 +541,11 @@
     // ============================================================
 
     function retryMessage(id) {
-        // Find the pending/failed message in the list
         const index = allMessages.findIndex(function(m) { return m._id === id; });
         if (index === -1) return;
         const msg = allMessages[index];
-        // Change status to pending and re‑send
         msg.status = 'pending';
-        // Re‑render this item (we can just re‑render the whole list)
         renderMessages(currentPage);
-        // Attempt to send again
         sendMessageToServer(msg, true);
     }
 
@@ -536,7 +554,6 @@
     // ============================================================
 
     function sendMessageToServer(msg, isRetry) {
-        // Build payload (same as before)
         const formData = new FormData();
         formData.append('action', 'add');
         formData.append('name', msg.name);
@@ -552,8 +569,7 @@
         formData.append('screenResolution', msg.screenResolution || '');
         formData.append('screenAspectRatio', msg.screenAspectRatio || '');
         formData.append('collectISP', COLLECTION.isp ? 'true' : 'false');
-        // Anti‑spam fields (we don't have them for retry, but they are not needed)
-        // We'll add dummy values for the ones that are required by server
+        // Anti‑spam dummy fields (not needed for retry, but server expects them)
         formData.append('honeypot', '');
         formData.append('formLoadTime', String(Date.now() - 5000));
         formData.append('humanFlag', 'true');
@@ -571,31 +587,24 @@
         })
         .then(function(data) {
             if (data.success) {
-                // Remove from pending list and update status to sent
                 const index = allMessages.findIndex(function(m) { return m._id === msg._id; });
                 if (index !== -1) {
                     allMessages[index].status = 'sent';
-                    // If we have a real ID from server, update it
                     if (data.id) {
                         allMessages[index]._id = data.id;
                     }
-                    // Remove from pending storage
                     removePendingMessage(msg._id);
                 }
                 renderMessages(currentPage);
-                // If this was a retry, we might also want to update the server-side list for others
-                // But that's already done.
                 return { success: true };
             } else {
                 throw new Error(data.error || 'Server error');
             }
         })
         .catch(function(error) {
-            // Mark as failed
             const index = allMessages.findIndex(function(m) { return m._id === msg._id; });
             if (index !== -1) {
                 allMessages[index].status = 'failed';
-                // Store in pending again (so it survives refresh)
                 addPendingMessage(allMessages[index]);
             }
             renderMessages(currentPage);
@@ -683,13 +692,10 @@
             console.warn('Unsend network error:', err);
         });
 
-        // Remove from local list
         const index = allMessages.findIndex(function(m) { return m._id === pendingMessageId; });
         if (index !== -1) {
             allMessages.splice(index, 1);
-            // Also remove from pending if exists
             removePendingMessage(pendingMessageId);
-            // Save to storage
             try {
                 localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(allMessages));
             } catch (_) {}
@@ -776,7 +782,6 @@
             }
 
             // ─── 4. IP Limit ──────────────────────────────────────────
-            // We'll get IP and check limit before creating the message
             const ipPromise = COLLECTION.ip ? getPublicIP() : Promise.resolve('Disabled');
 
             ipPromise.then(function(ip) {
@@ -786,7 +791,6 @@
                     return Promise.reject('Limit reached');
                 }
 
-                // ─── All checks passed: create message ────────────────
                 const id = Date.now() + '_' + Math.random().toString(36).slice(2, 6);
                 const deviceTypeModel = getDeviceTypeModel();
                 const browser = getBrowserInfo();
@@ -794,7 +798,6 @@
                 const screenInfo = getScreenInfo();
                 const graphicsInfo = getGraphicsInfo();
 
-                // Gather battery (async)
                 return getBatteryInfo().then(function(battery) {
                     const newMsg = {
                         _id: id,
@@ -819,15 +822,11 @@
             .then(function(newMsg) {
                 // ─── Add to UI optimistically ──────────────────────────
                 allMessages.unshift(newMsg);
-                // Save to localStorage
                 try {
                     localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(allMessages));
                 } catch (_) {}
-                // Add to pending storage
                 addPendingMessage(newMsg);
-                // Clear draft
                 clearDraft();
-                // Reset form
                 form.reset();
                 document.getElementById('msg-counter').textContent = '0 / 300';
                 document.getElementById('formLoadTime').value = Date.now();
@@ -841,28 +840,22 @@
                 submitSpinner.style.display = 'inline';
 
                 return sendMessageToServer(newMsg, false)
-                    .then(function(result) {
+                    .then(function() {
                         submitBtn.disabled = false;
                         submitText.textContent = CFG.LABELS.submitButton;
                         submitSpinner.style.display = 'none';
-                        // Success – update IP count and cooldown
                         incrementIPCount(newMsg.ip);
                         setCooldown();
-                        // Start unsend timer
                         startUnsendTimer(newMsg._id);
-                        // Show toast (already shown by unsend toast)
                     })
                     .catch(function(error) {
                         submitBtn.disabled = false;
                         submitText.textContent = CFG.LABELS.submitButton;
                         submitSpinner.style.display = 'none';
-                        // Error is already handled inside sendMessageToServer (marks as failed)
-                        // Show a brief error in form status
                         showFormStatus('❌ Gagal mengirim. Klik "Retry" di pesan.', 'error');
                     });
             })
             .catch(function(error) {
-                // If error is 'Limit reached', we already showed status
                 if (error !== 'Limit reached') {
                     showFormStatus('❌ Gagal mendapatkan IP.', 'error');
                 }
