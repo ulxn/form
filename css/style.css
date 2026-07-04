@@ -388,7 +388,8 @@ textarea.field {
     max-width: 90vw;
 }
 .toast {
-    background: var(--toast-bg);
+    background: transparent;
+    backdrop-filter: blur(12px);
     color: var(--toast-text);
     padding: 12px 24px;
     border-radius: 16px;
