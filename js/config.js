@@ -44,7 +44,7 @@ const CONFIG = (function() {
         graphics: true, // Graphics Card (may be blocked, client-side)
         timezone: true, // System Time Zone (fast, client-side)
         ip: true,       // IP Address (via ipify.org – fast)
-        isp: true,      // ISP (via ip-api.com – SLOW, ~1-2s). Disable to speed up submission.
+        isp: false,      // ISP (via ip-api.com – SLOW, ~1-2s). Disable to speed up submission.
     };
 
     // ============================================================
