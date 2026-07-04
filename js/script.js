@@ -208,7 +208,8 @@
 
         applyConfigToDOM();
         loadDraft();
-        fetchMessages(); // load from server
+        loadCachedMessagesInstantly(); // show something immediately, no blank wait
+        fetchMessages(); // then refresh from server in the background
     });
 
     // ============================================================
@@ -335,6 +336,24 @@
     // ============================================================
     // 6. FETCH MESSAGES FROM SERVER – with robust error handling
     // ============================================================
+
+    function loadCachedMessagesInstantly() {
+        try {
+            const raw = localStorage.getItem(CFG.STORAGE_KEY);
+            if (raw) {
+                allMessages = JSON.parse(raw);
+                currentPage = 1;
+                renderMessages(currentPage);
+                return;
+            }
+        } catch (_) {}
+        // No cache yet (first ever visit) – show a lightweight loading state
+        // instead of leaving the list blank while the server responds.
+        const listEl = document.getElementById('message-list');
+        if (listEl) {
+            listEl.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Memuat ucapan...</div>';
+        }
+    }
 
     function fetchMessages() {
         const url = CFG.WEB_APP_URL;
