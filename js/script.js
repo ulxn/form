@@ -401,11 +401,19 @@
 
             const pending = getPendingMessages();
             const serverIds = serverData.map(function(m) { return m.id; });
+            const STALE_PENDING_MS = 120000; // a real send never stays "pending" this long
 
             // ─── Filter pending messages ──────────────────────────────────
             // Remove any pending message that already exists on the server
             // by comparing content (name + rsvp + message)
             const pendingToShow = pending.filter(function(p) {
+                // Stale/zombie entry (e.g. leftover from an old ID-mismatch bug,
+                // or a send that silently died) — purge it, don't keep showing it.
+                if (Date.now() - new Date(p.time).getTime() > STALE_PENDING_MS) {
+                    removePendingMessage(p._id);
+                    return false;
+                }
+
                 // First check by ID
                 if (serverIds.includes(p._id)) return false;
 
@@ -535,17 +543,11 @@
         listEl.innerHTML = pageItems.map(function(m, i) {
             const rsvpClass = m.rsvp === 'Hadir' ? 'hadir' : 'belum';
             const isPending = (m.status === 'pending');
-            const isFailed = (m.status === 'failed');
             let statusHTML = '';
             if (isPending) {
                 statusHTML = '<span class="message-status pending">' + CFG.LABELS.pendingStatus + '</span>';
-            } else if (isFailed) {
-                statusHTML = '<span class="message-status failed">' + CFG.LABELS.failedStatus + '</span>';
             }
             let retryButton = '';
-            if (isFailed) {
-                retryButton = '<button class="retry-btn" data-id="' + m._id + '">' + CFG.LABELS.retryButton + '</button>';
-            }
             return (
                 '<div class="message-item" style="animation-delay:' + (i * 0.05) + 's">' +
                 '<div class="message-item-top">' +
@@ -609,12 +611,24 @@
     // ============================================================
 
     function retryMessage(id) {
+        if (!navigator.onLine) return;
         const index = allMessages.findIndex(function(m) { return m._id === id; });
         if (index === -1) return;
         const msg = allMessages[index];
         msg.status = 'pending';
         renderMessages(currentPage);
         sendMessageToServer(msg, true);
+    }
+
+    // Permanently discard a never-sent message (used automatically on failure).
+    function discardMessage(id) {
+        const index = allMessages.findIndex(function(m) { return m._id === id; });
+        if (index !== -1) allMessages.splice(index, 1);
+        removePendingMessage(id);
+        try {
+            localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(allMessages));
+        } catch (_) {}
+        renderMessages(currentPage);
     }
 
     // ============================================================
@@ -660,11 +674,12 @@
                 if (data.success) {
                     const index = allMessages.findIndex(function(m) { return m._id === msg._id; });
                     if (index !== -1) {
+                        const originalId = allMessages[index]._id; // capture BEFORE it gets overwritten below
                         allMessages[index].status = 'sent';
                         if (data.id) {
                             allMessages[index]._id = data.id;
                         }
-                        removePendingMessage(msg._id);
+                        removePendingMessage(originalId);
                         try {
                             localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(allMessages));
                         } catch (_) {}
@@ -676,12 +691,7 @@
                 }
             })
             .catch(function(error) {
-                const index = allMessages.findIndex(function(m) { return m._id === msg._id; });
-                if (index !== -1) {
-                    allMessages[index].status = 'failed';
-                    addPendingMessage(allMessages[index]);
-                }
-                renderMessages(currentPage);
+                discardMessage(msg._id);
                 throw error;
             });
         });
@@ -914,7 +924,7 @@
                         submitBtn.disabled = false;
                         submitText.textContent = CFG.LABELS.submitButton;
                         submitSpinner.style.display = 'none';
-                        showFormStatus('❌ Gagal mengirim. Klik "Retry" di pesan.', 'error');
+                        showFormStatus('❌ Gagal mengirim. Silakan coba kirim ulang.', 'error');
                     });
             })
             .catch(function(error) {
