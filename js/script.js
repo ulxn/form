@@ -863,7 +863,7 @@
             const rsvp = form.querySelector('[name="rsvp"]').value;
             const message = form.querySelector('[name="message"]').value.trim();
             if (!name || !rsvp || !message) {
-                showFormStatus('❌ Semua field harus diisi.', 'error');
+                showFormStatus('Isi semua field dulu ya.', 'error');
                 return;
             }
 
