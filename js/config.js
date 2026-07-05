@@ -72,6 +72,7 @@ const CONFIG = (function() {
     // 🎨 TEXT & LABELS
     // ============================================================
     const LABELS = {
+        defaultGreeting: 'Halo, Sahabat.',
         heroTitle: 'Bagikan Ucapan &amp; Doa Terbaikmu',
         formSubtitle: 'Ucapan dan doa terbaik untuk ' + BRIDE_NAME + ' dan ' + GROOM_NAME,
         brandSeparator: ' &amp; ',
