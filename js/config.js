@@ -64,6 +64,11 @@ const CONFIG = (function() {
     };
 
     // ============================================================
+    // ANTI-SNOOPING
+    // ============================================================
+    const ANTI_SNOOPING = true;
+
+    // ============================================================
     // 🎨 TEXT & LABELS
     // ============================================================
     const LABELS = {
@@ -115,6 +120,7 @@ const CONFIG = (function() {
         IP_TRACKING_KEY: IP_TRACKING_KEY,
         COOLDOWN_KEY: COOLDOWN_KEY,
         COLLECTION: COLLECTION,
+        ANTI_SNOOPING: ANTI_SNOOPING,  // <-- new toggle
         LABELS: LABELS,
     };
 
