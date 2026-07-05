@@ -211,6 +211,33 @@
         });
     }
 
+
+    // ============================================================
+    // 0. PERSONALISED GREETING (FIXED)
+    // ============================================================
+
+    function setGreeting() {
+        const greetingEl = document.getElementById('greeting');
+        if (!greetingEl) return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        // Use the configurable parameter name
+        const paramName = CFG.GREETING_PARAM || 'name';
+        let name = urlParams.get(paramName) || '';
+
+        if (name) {
+            name = decodeURIComponent(name).trim();
+        }
+
+        if (!name) {
+            greetingEl.textContent = CFG.LABELS.defaultGreeting;
+            return;
+        }
+
+        greetingEl.textContent = 'Halo, ' + name + '.';
+    }
+
+
     // ============================================================
     // 1. THEME TOGGLE
     // ============================================================
@@ -259,7 +286,8 @@
         if (form) form.addEventListener('focusin', setHuman, { passive: true });
 
         applyConfigToDOM();
-        // loadDraft();
+        setGreeting();
+        // loadDraft(); // disabled
         loadCachedMessagesInstantly();
         fetchMessages();
     });
@@ -325,18 +353,7 @@
         } catch (_) {}
     }
 
-    // function loadDraft() {
-    //     try {
-    //         const raw = localStorage.getItem(CFG.DRAFT_KEY);
-    //         if (!raw) return;
-    //         const draft = JSON.parse(raw);
-    //         document.getElementById('form-name').value = draft.name || '';
-    //         document.getElementById('rsvp').value = draft.rsvp || '';
-    //         document.getElementById('form-message').value = draft.message || '';
-    //         const counter = document.getElementById('msg-counter');
-    //         if (counter) counter.textContent = (draft.message || '').length + ' / 300';
-    //     } catch (_) {}
-    // }
+    // function loadDraft() { ... } // intentionally disabled
 
     function clearDraft() {
         try {

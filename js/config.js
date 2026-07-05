@@ -39,7 +39,7 @@ const CONFIG = (function() {
     // ============================================================
     // 📡 BACKEND URL
     // ============================================================
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwceol5RTl762THc0xaxIOUJ9D2LFglIQf1DmqxJEFZ2exoE-AE7PxpbcgmikCOEpNiyw/exec';
+    const WEB_APP_URL = 'xxxxxxx'; // your Google Apps Script web app URL
 
     // ============================================================
     // 💾 LOCAL STORAGE KEYS
@@ -66,7 +66,7 @@ const CONFIG = (function() {
     // ============================================================
     // ANTI-SNOOPING
     // ============================================================
-    const ANTI_SNOOPING = true;
+    const ANTI_SNOOPING = false;
 
     // ============================================================
     // 🎨 TEXT & LABELS
@@ -102,6 +102,11 @@ const CONFIG = (function() {
     };
 
     // ============================================================
+    // 🧩 GREETING URL PARAM QUERY
+    // ============================================================
+    const GREETING_PARAM = 'name';
+
+    // ============================================================
     // 📦 EXPORT
     // ============================================================
     return {
@@ -121,7 +126,8 @@ const CONFIG = (function() {
         IP_TRACKING_KEY: IP_TRACKING_KEY,
         COOLDOWN_KEY: COOLDOWN_KEY,
         COLLECTION: COLLECTION,
-        ANTI_SNOOPING: ANTI_SNOOPING,  // <-- new toggle
+        ANTI_SNOOPING: ANTI_SNOOPING,
+        GREETING_PARAM: GREETING_PARAM,
         LABELS: LABELS,
     };
 
