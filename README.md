@@ -2,7 +2,7 @@
 
 A serverless guestbook for weddings – built with **HTML, CSS, JavaScript, and Google Apps Script**
 
-> **✨ Live Demo:** [https://ulxn.github.io/zw](https://ulxn.github.io/zw)
+> **✨ Live Demo:** [>>click here<<](https://ulxn.github.io/form)
 
 ---
 
