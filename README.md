@@ -10,10 +10,6 @@ A serverless guestbook for weddings – built with **HTML, CSS, JavaScript, and 
 
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
-- [Architecture Overview](#-architecture-overview)
-- [How It Works](#-how-it-works)
-- [Setup & Deployment](#-setup--deployment)
-- [Configuration](#-configuration)
 - [Security](#-security)
 - [File Structure](#-file-structure)
 - [Troubleshooting](#-troubleshooting)
