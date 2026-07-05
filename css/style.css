@@ -524,3 +524,11 @@ textarea.field {
     .message-item-top { flex-wrap: wrap; }
     .message-name { flex: 1 1 100%; }
 }
+
+/* ─── Anti‑snooping ─── */
+body.anti-snooping {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
