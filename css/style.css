@@ -41,6 +41,13 @@ h1, h2, h3 { font-family: 'Cormorant Garamond', serif; }
     letter-spacing: -0.5px;
 }
 
+.greeting {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
 /* ----- TOP BAR ----- */
 .topbar {
     position: sticky;
