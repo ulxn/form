@@ -72,7 +72,6 @@ const CONFIG = (function() {
         brandSeparator: ' &amp; ',
         submitButton: 'Kirim',
         sending: 'Mengirim...',
-        retryButton: '↻ Retry',
         errorGeneric: 'Terjadi kesalahan.',
         errorBot: '🤖 Bot detected.',
         errorTooFast: '⏳ Take your time, Buddy.',
@@ -94,7 +93,6 @@ const CONFIG = (function() {
         nameLabel: 'Nama',
         messageLabel: 'Pesan',
         pendingStatus: '⏳ Mengirim...',
-        failedStatus: '❌ Gagal',
     };
 
     // ============================================================
