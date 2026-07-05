@@ -1,16 +1,12 @@
-/**
- * ============================================================
- * WEDDING WISHES – Frontend (client‑side data collection)
- * ============================================================
- * 
- * Security features added:
- *   - CSRF token fetched from server and included in every POST.
- *   - Privacy notice is displayed (in HTML).
- * ============================================================
- */
+/* ============================================================
+ * WEDDING WISHES – Frontend
+ * ============================================================*/
 
 (function() {
     'use strict';
+
+    // Silence all console output
+    console.log = console.warn = console.info = console.error = function() {};
 
     const CFG = window.CONFIG;
     if (!CFG) {
@@ -21,7 +17,43 @@
     const COLLECTION = CFG.COLLECTION;
 
     // ============================================================
-    // 0. CLIENT‑SIDE DETECTION FUNCTIONS (unchanged)
+    // ANTI-SNOOPING
+    // ============================================================
+
+    if (CFG.ANTI_SNOOPING) {
+        // 1. Disable right-click
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // 2. Block common DevTools shortcuts (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U)
+        document.addEventListener('keydown', function(e) {
+            const key = e.key;
+            const ctrl = e.ctrlKey || e.metaKey;
+            const shift = e.shiftKey;
+
+            // F12
+            if (key === 'F12') {
+                e.preventDefault();
+                return false;
+            }
+            // Ctrl+Shift+I (DevTools), Ctrl+Shift+J (Console), Ctrl+U (View Source)
+            if (ctrl && shift && (key === 'I' || key === 'J')) {
+                e.preventDefault();
+                return false;
+            }
+            if (ctrl && key === 'U') {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // 3. (Optional) Disable text selection via CSS – we'll add a class to body
+        document.body.classList.add('anti-snooping');
+    }
+
+    // ============================================================
+    // 0. CLIENT‑SIDE FUNCTIONS
     // ============================================================
 
     function getBrowserInfo() {
@@ -180,7 +212,7 @@
     }
 
     // ============================================================
-    // 1. THEME TOGGLE (unchanged)
+    // 1. THEME TOGGLE
     // ============================================================
 
     const themeToggle = document.getElementById('theme-toggle');
@@ -233,7 +265,7 @@
     });
 
     // ============================================================
-    // 3. APPLY CONFIG TO DOM (unchanged)
+    // 3. APPLY CONFIG TO DOM 
     // ============================================================
 
     function applyConfigToDOM() {
@@ -280,7 +312,7 @@
     }
 
     // ============================================================
-    // 4. DRAFT SAVING / LOADING (unchanged)
+    // 4. DRAFT SAVING / LOADING
     // ============================================================
 
     function saveDraft() {
@@ -324,7 +356,7 @@
     });
 
     // ============================================================
-    // 5. PENDING MESSAGES (unchanged)
+    // 5. PENDING MESSAGES
     // ============================================================
 
     function getPendingMessages() {
@@ -353,7 +385,7 @@
     }
 
     // ============================================================
-    // 6. FETCH MESSAGES (unchanged)
+    // 6. FETCH MESSAGES
     // ============================================================
 
     function loadCachedMessagesInstantly() {
@@ -489,7 +521,7 @@
     }
 
     // ============================================================
-    // 7. RENDER MESSAGES (unchanged)
+    // 7. RENDER MESSAGES
     // ============================================================
 
     let allMessages = [];
@@ -607,7 +639,7 @@
     }
 
     // ============================================================
-    // 8. RETRY FUNCTION (unchanged)
+    // 8. RETRY FUNCTION
     // ============================================================
 
     function retryMessage(id) {
@@ -698,7 +730,7 @@
     }
 
     // ============================================================
-    // 10. TEXTAREA COUNTER (unchanged)
+    // 10. TEXTAREA COUNTER
     // ============================================================
 
     const msg = document.getElementById('form-message');
@@ -711,7 +743,7 @@
     }
 
     // ============================================================
-    // 11. TOAST SYSTEM (unchanged)
+    // 11. TOAST SYSTEM
     // ============================================================
 
     const unsendToast = document.getElementById('unsendToast');
@@ -936,7 +968,7 @@
     }
 
     // ============================================================
-    // 13. IP TRACKING & COOLDOWN (client‑side, now decorative)
+    // 13. IP (client‑side, now decorative)
     // ============================================================
 
     function getIPCount(ip) {
@@ -972,7 +1004,7 @@
     }
 
     // ============================================================
-    // 14. Cleanup (unchanged)
+    // 14. Cleanup
     // ============================================================
 
     window.addEventListener('beforeunload', function() {
