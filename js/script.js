@@ -2,11 +2,11 @@
  * WEDDING WISHES – Frontend
  * ============================================================*/
 
-(function() {
+(function () {
     'use strict';
 
     // Silence all console output
-    console.log = console.warn = console.info = console.error = function() {};
+    console.log = console.warn = console.info = console.error = function () { };
 
     const CFG = window.CONFIG;
     if (!CFG) {
@@ -22,12 +22,12 @@
 
     if (CFG.ANTI_SNOOPING) {
         // 1. Disable right-click
-        document.addEventListener('contextmenu', function(e) {
+        document.addEventListener('contextmenu', function (e) {
             e.preventDefault();
         });
 
         // 2. Block common DevTools shortcuts (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U)
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             const key = e.key;
             const ctrl = e.ctrlKey || e.metaKey;
             const shift = e.shiftKey;
@@ -115,13 +115,13 @@
             return Promise.resolve({ level: 'Unknown', status: 'Unknown' });
         }
         return navigator.getBattery()
-            .then(function(battery) {
+            .then(function (battery) {
                 return {
                     level: Math.round(battery.level * 100) + '%',
                     status: battery.charging ? 'Charging' : 'Discharging'
                 };
             })
-            .catch(function() {
+            .catch(function () {
                 return { level: 'Unknown', status: 'Unknown' };
             });
     }
@@ -175,14 +175,14 @@
     function getPublicIP() {
         if (!COLLECTION.ip) return Promise.resolve('Disabled');
         return fetch('https://api.ipify.org?format=json')
-            .then(function(res) {
+            .then(function (res) {
                 if (!res.ok) throw new Error('IP fetch failed');
                 return res.json();
             })
-            .then(function(data) {
+            .then(function (data) {
                 return data.ip;
             })
-            .catch(function() {
+            .catch(function () {
                 return 'Unknown';
             });
     }
@@ -194,21 +194,21 @@
             method: 'GET',
             headers: { 'Accept': 'application/json' }
         })
-        .then(function(res) {
-            if (!res.ok) throw new Error('Failed to fetch CSRF token');
-            return res.json();
-        })
-        .then(function(data) {
-            if (data.token) {
-                return data.token;
-            } else {
-                throw new Error('No token in response');
-            }
-        })
-        .catch(function() {
-            // Fallback: generate a client‑side token (less secure but better than nothing)
-            return Date.now() + '_' + Math.random().toString(36).slice(2, 10);
-        });
+            .then(function (res) {
+                if (!res.ok) throw new Error('Failed to fetch CSRF token');
+                return res.json();
+            })
+            .then(function (data) {
+                if (data.token) {
+                    return data.token;
+                } else {
+                    throw new Error('No token in response');
+                }
+            })
+            .catch(function () {
+                // Fallback: generate a client‑side token (less secure but better than nothing)
+                return Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+            });
     }
 
 
@@ -255,7 +255,7 @@
     let currentTheme = localStorage.getItem('theme') || 'light';
     applyTheme(currentTheme);
 
-    themeToggle.addEventListener('click', function() {
+    themeToggle.addEventListener('click', function () {
         currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
         localStorage.setItem('theme', currentTheme);
         applyTheme(currentTheme);
@@ -265,20 +265,20 @@
     // 2. ANTI‑SPAM & DOM SETUP
     // ============================================================
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const loadTimeField = document.getElementById('formLoadTime');
         if (loadTimeField) loadTimeField.value = Date.now();
 
-        const setHuman = function() {
+        const setHuman = function () {
             const flagField = document.getElementById('humanFlag');
             if (flagField && flagField.value !== 'true') {
                 flagField.value = 'true';
             }
-            ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(function(event) {
+            ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(function (event) {
                 document.removeEventListener(event, setHuman);
             });
         };
-        ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(function(event) {
+        ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(function (event) {
             document.addEventListener(event, setHuman, { passive: true });
         });
 
@@ -287,7 +287,6 @@
 
         applyConfigToDOM();
         setGreeting();
-        // loadDraft(); // disabled
         loadCachedMessagesInstantly();
         fetchMessages();
     });
@@ -343,35 +342,6 @@
     // 4. DRAFT SAVING / LOADING
     // ============================================================
 
-    function saveDraft() {
-        const name = document.getElementById('form-name').value;
-        const rsvp = document.getElementById('rsvp').value;
-        const message = document.getElementById('form-message').value;
-        const draft = { name, rsvp, message };
-        try {
-            localStorage.setItem(CFG.DRAFT_KEY, JSON.stringify(draft));
-        } catch (_) {}
-    }
-
-    // function loadDraft() { ... } // intentionally disabled
-
-    function clearDraft() {
-        try {
-            localStorage.removeItem(CFG.DRAFT_KEY);
-        } catch (_) {}
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const inputs = ['form-name', 'rsvp', 'form-message'];
-        inputs.forEach(function(id) {
-            const el = document.getElementById(id);
-            if (el) {
-                el.addEventListener('input', saveDraft);
-                el.addEventListener('change', saveDraft);
-            }
-        });
-    });
-
     // ============================================================
     // 5. PENDING MESSAGES
     // ============================================================
@@ -386,7 +356,7 @@
     function setPendingMessages(pending) {
         try {
             localStorage.setItem(CFG.PENDING_KEY, JSON.stringify(pending));
-        } catch (_) {}
+        } catch (_) { }
     }
 
     function addPendingMessage(msg) {
@@ -397,7 +367,7 @@
 
     function removePendingMessage(id) {
         let pending = getPendingMessages();
-        pending = pending.filter(function(m) { return m._id !== id; });
+        pending = pending.filter(function (m) { return m._id !== id; });
         setPendingMessages(pending);
     }
 
@@ -414,7 +384,7 @@
                 renderMessages(currentPage);
                 return;
             }
-        } catch (_) {}
+        } catch (_) { }
         const listEl = document.getElementById('message-list');
         if (listEl) {
             listEl.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Memuat ucapan...</div>';
@@ -423,118 +393,111 @@
 
     function fetchMessages() {
         const url = CFG.WEB_APP_URL;
-        console.log('🔍 fetchMessages() called. URL:', url);
 
         if (!url || url === 'YOUR_ACTUAL_APPS_SCRIPT_WEB_APP_URL') {
-            console.warn('⚠️ WEB_APP_URL not configured. Please set it in config.js');
             allMessages = [];
             currentPage = 1;
             renderMessages(currentPage);
             return;
         }
 
-        console.log('📡 Fetching messages from:', url);
         fetch(url, {
             method: 'GET',
             headers: { 'Accept': 'application/json' }
         })
-        .then(function(response) {
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            return response.json();
-        })
-        .then(function(serverData) {
-            if (!Array.isArray(serverData)) {
-                if (serverData && serverData.error) throw new Error('Server error: ' + serverData.error);
-                else throw new Error('Invalid response from server (not an array)');
-            }
-
-            const pending = getPendingMessages();
-            const serverIds = serverData.map(function(m) { return m.id; });
-            const STALE_PENDING_MS = 120000; // a real send never stays "pending" this long
-
-            // ─── Filter pending messages ──────────────────────────────────
-            // Remove any pending message that already exists on the server
-            // by comparing content (name + rsvp + message)
-            const pendingToShow = pending.filter(function(p) {
-                // Stale/zombie entry (e.g. leftover from an old ID-mismatch bug,
-                // or a send that silently died) — purge it, don't keep showing it.
-                if (Date.now() - new Date(p.time).getTime() > STALE_PENDING_MS) {
-                    removePendingMessage(p._id);
-                    return false;
+            .then(function (response) {
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return response.json();
+            })
+            .then(function (serverData) {
+                if (!Array.isArray(serverData)) {
+                    if (serverData && serverData.error) throw new Error('Server error: ' + serverData.error);
+                    else throw new Error('Invalid response from server (not an array)');
                 }
 
-                // First check by ID
-                if (serverIds.includes(p._id)) return false;
+                const pending = getPendingMessages();
+                const serverIds = serverData.map(function (m) { return m.id; });
+                const STALE_PENDING_MS = 120000; // a real send never stays "pending" this long
 
-                // Then check by content (in case the ID differs)
-                const existsOnServer = serverData.some(function(s) {
-                    return s.name === p.name &&
-                        s.rsvp === p.rsvp &&
-                        s.message === p.message &&
-                        (Math.abs(new Date(s.time) - new Date(p.time)) < 60000); // within 1 minute
+                // ─── Filter pending messages ──────────────────────────────────
+                // Remove any pending message that already exists on the server
+                // by comparing content (name + rsvp + message)
+                const pendingToShow = pending.filter(function (p) {
+                    // Stale/zombie entry (e.g. leftover from an old ID-mismatch bug,
+                    // or a send that silently died) — purge it, don't keep showing it.
+                    if (Date.now() - new Date(p.time).getTime() > STALE_PENDING_MS) {
+                        removePendingMessage(p._id);
+                        return false;
+                    }
+
+                    // First check by ID
+                    if (serverIds.includes(p._id)) return false;
+
+                    // Then check by content (in case the ID differs)
+                    const existsOnServer = serverData.some(function (s) {
+                        return s.name === p.name &&
+                            s.rsvp === p.rsvp &&
+                            s.message === p.message &&
+                            (Math.abs(new Date(s.time) - new Date(p.time)) < 60000); // within 1 minute
+                    });
+
+                    // If it exists on the server, remove it from pending storage
+                    if (existsOnServer) {
+                        removePendingMessage(p._id);
+                        return false;
+                    }
+
+                    return true;
                 });
 
-                // If it exists on the server, remove it from pending storage
-                if (existsOnServer) {
-                    removePendingMessage(p._id);
-                    return false;
-                }
+                const pendingUI = pendingToShow.map(function (m) {
+                    return {
+                        _id: m._id,
+                        name: m.name,
+                        rsvp: m.rsvp,
+                        message: m.message,
+                        time: m.time || new Date().toISOString(),
+                        status: 'pending'
+                    };
+                });
 
-                return true;
+                const combined = serverData.map(function (m) {
+                    return {
+                        _id: m.id,
+                        name: m.name,
+                        rsvp: m.rsvp,
+                        message: m.message,
+                        time: m.time || new Date().toISOString(),
+                        status: 'sent'
+                    };
+                });
+
+                const all = combined.concat(pendingUI);
+                all.sort(function (a, b) {
+                    return new Date(b.time) - new Date(a.time);
+                });
+
+                try {
+                    localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(all));
+                } catch (_) { }
+                allMessages = all;
+                currentPage = 1;
+                renderMessages(currentPage);
+            })
+            .catch(function (error) {
+                try {
+                    const raw = localStorage.getItem(CFG.STORAGE_KEY);
+                    if (raw) {
+                        allMessages = JSON.parse(raw);
+                        currentPage = 1;
+                        renderMessages(currentPage);
+                        return;
+                    }
+                } catch (_) { }
+                allMessages = [];
+                currentPage = 1;
+                renderMessages(currentPage);
             });
-
-            const pendingUI = pendingToShow.map(function(m) {
-                return {
-                    _id: m._id,
-                    name: m.name,
-                    rsvp: m.rsvp,
-                    message: m.message,
-                    time: m.time || new Date().toISOString(),
-                    status: 'pending'
-                };
-            });
-
-            const combined = serverData.map(function(m) {
-                return {
-                    _id: m.id,
-                    name: m.name,
-                    rsvp: m.rsvp,
-                    message: m.message,
-                    time: m.time || new Date().toISOString(),
-                    status: 'sent'
-                };
-            });
-
-            const all = combined.concat(pendingUI);
-            all.sort(function(a, b) {
-                return new Date(b.time) - new Date(a.time);
-            });
-
-            try {
-                localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(all));
-            } catch (_) {}
-            allMessages = all;
-            currentPage = 1;
-            renderMessages(currentPage);
-            console.log('✅ Messages rendered successfully. Count:', allMessages.length);
-        })
-        .catch(function(error) {
-            console.error('❌ Fetch error:', error);
-            try {
-                const raw = localStorage.getItem(CFG.STORAGE_KEY);
-                if (raw) {
-                    allMessages = JSON.parse(raw);
-                    currentPage = 1;
-                    renderMessages(currentPage);
-                    console.log('📂 Loaded from localStorage. Count:', allMessages.length);
-                    return;
-                }
-            } catch (_) {}
-            allMessages = [];
-            currentPage = 1;
-            renderMessages(currentPage);
-            console.log('📭 No data – showing empty state.');
-        });
     }
 
     // ============================================================
@@ -569,7 +532,6 @@
         const pageSize = (typeof PAGE_SIZE === 'number' && PAGE_SIZE > 0) ? PAGE_SIZE : 5;
 
         if (!listEl) {
-            console.error('❌ message-list element not found!');
             return;
         }
 
@@ -589,14 +551,13 @@
         const start = (page - 1) * pageSize;
         const pageItems = allMessages.slice(start, start + pageSize);
 
-        listEl.innerHTML = pageItems.map(function(m, i) {
+        listEl.innerHTML = pageItems.map(function (m, i) {
             const rsvpClass = m.rsvp === 'Hadir' ? 'hadir' : 'belum';
             const isPending = (m.status === 'pending');
             let statusHTML = '';
             if (isPending) {
                 statusHTML = '<span class="message-status pending">' + CFG.LABELS.pendingStatus + '</span>';
             }
-            let retryButton = '';
             return (
                 '<div class="message-item" style="animation-delay:' + (i * 0.05) + 's">' +
                 '<div class="message-item-top">' +
@@ -606,7 +567,6 @@
                 '</div>' +
                 '<div class="message-actions">' +
                 statusHTML +
-                retryButton +
                 '</div>' +
                 '</div>' +
                 '<p class="message-text">' + escapeHtml(m.message) + '</p>' +
@@ -614,13 +574,6 @@
                 '</div>'
             );
         }).join('');
-
-        listEl.querySelectorAll('.retry-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const id = this.getAttribute('data-id');
-                retryMessage(id);
-            });
-        });
 
         renderPagination(page, totalPages);
     }
@@ -638,8 +591,8 @@
         html += '<button class="page-btn" data-page="' + (page + 1) + '" ' + (page === totalPages ? 'disabled' : '') + '><i class="fas fa-chevron-right"></i></button>';
         pagEl.innerHTML = html;
 
-        pagEl.querySelectorAll('.page-btn').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
+        pagEl.querySelectorAll('.page-btn').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 const p = parseInt(btn.getAttribute('data-page'), 10);
                 const total = Math.ceil(allMessages.length / pageSize);
@@ -656,27 +609,17 @@
     }
 
     // ============================================================
-    // 8. RETRY FUNCTION
+    // 8. DISCARD (used automatically when a send fails)
     // ============================================================
-
-    function retryMessage(id) {
-        if (!navigator.onLine) return;
-        const index = allMessages.findIndex(function(m) { return m._id === id; });
-        if (index === -1) return;
-        const msg = allMessages[index];
-        msg.status = 'pending';
-        renderMessages(currentPage);
-        sendMessageToServer(msg, true);
-    }
 
     // Permanently discard a never-sent message (used automatically on failure).
     function discardMessage(id) {
-        const index = allMessages.findIndex(function(m) { return m._id === id; });
+        const index = allMessages.findIndex(function (m) { return m._id === id; });
         if (index !== -1) allMessages.splice(index, 1);
         removePendingMessage(id);
         try {
             localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(allMessages));
-        } catch (_) {}
+        } catch (_) { }
         renderMessages(currentPage);
     }
 
@@ -686,7 +629,7 @@
 
     function sendMessageToServer(msg, isRetry) {
         // First get a CSRF token
-        return fetchCSRFToken().then(function(token) {
+        return fetchCSRFToken().then(function (token) {
             const formData = new FormData();
             formData.append('action', 'add');
             formData.append('name', msg.name);
@@ -715,34 +658,34 @@
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: urlEncoded,
             })
-            .then(function(response) {
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-                return response.json();
-            })
-            .then(function(data) {
-                if (data.success) {
-                    const index = allMessages.findIndex(function(m) { return m._id === msg._id; });
-                    if (index !== -1) {
-                        const originalId = allMessages[index]._id; // capture BEFORE it gets overwritten below
-                        allMessages[index].status = 'sent';
-                        if (data.id) {
-                            allMessages[index]._id = data.id;
+                .then(function (response) {
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (data.success) {
+                        const index = allMessages.findIndex(function (m) { return m._id === msg._id; });
+                        if (index !== -1) {
+                            const originalId = allMessages[index]._id; // capture BEFORE it gets overwritten below
+                            allMessages[index].status = 'sent';
+                            if (data.id) {
+                                allMessages[index]._id = data.id;
+                            }
+                            removePendingMessage(originalId);
+                            try {
+                                localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(allMessages));
+                            } catch (_) { }
                         }
-                        removePendingMessage(originalId);
-                        try {
-                            localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(allMessages));
-                        } catch (_) {}
+                        renderMessages(currentPage);
+                        return { success: true };
+                    } else {
+                        throw new Error(data.error || 'Server error');
                     }
-                    renderMessages(currentPage);
-                    return { success: true };
-                } else {
-                    throw new Error(data.error || 'Server error');
-                }
-            })
-            .catch(function(error) {
-                discardMessage(msg._id);
-                throw error;
-            });
+                })
+                .catch(function (error) {
+                    discardMessage(msg._id);
+                    throw error;
+                });
         });
     }
 
@@ -754,7 +697,7 @@
     const counter = document.getElementById('msg-counter');
     if (msg && counter) {
         counter.textContent = '0 / 300';
-        msg.addEventListener('input', function() {
+        msg.addEventListener('input', function () {
             counter.textContent = this.value.length + ' / 300';
         });
     }
@@ -782,7 +725,7 @@
         notificationText.textContent = message;
         showToast(notificationToast);
         if (notificationTimeout) clearTimeout(notificationTimeout);
-        notificationTimeout = setTimeout(function() { hideToast(notificationToast); }, duration);
+        notificationTimeout = setTimeout(function () { hideToast(notificationToast); }, duration);
     }
 
     function startUnsendTimer(messageId) {
@@ -792,7 +735,7 @@
         toastTimer.textContent = unsendCountdown;
         pendingMessageId = messageId;
         showToast(unsendToast);
-        unsendTimerId = setInterval(function() {
+        unsendTimerId = setInterval(function () {
             unsendCountdown -= 1;
             toastTimer.textContent = unsendCountdown;
             if (unsendCountdown <= 0) {
@@ -804,7 +747,7 @@
         }, 1000);
     }
 
-    unsendBtn.addEventListener('click', function() {
+    unsendBtn.addEventListener('click', function () {
         if (pendingMessageId === null) return;
 
         const payload = new URLSearchParams();
@@ -816,23 +759,15 @@
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: payload.toString(),
         })
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
-            if (!data.success) {
-                console.warn('Unsend failed:', data.error);
-            }
-        })
-        .catch(function(err) {
-            console.warn('Unsend network error:', err);
-        });
+            .catch(function () { });
 
-        const index = allMessages.findIndex(function(m) { return m._id === pendingMessageId; });
+        const index = allMessages.findIndex(function (m) { return m._id === pendingMessageId; });
         if (index !== -1) {
             allMessages.splice(index, 1);
             removePendingMessage(pendingMessageId);
             try {
                 localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(allMessages));
-            } catch (_) {}
+            } catch (_) { }
             renderMessages(currentPage);
         }
 
@@ -859,7 +794,7 @@
         statusDiv.textContent = message;
         statusDiv.style.display = 'block';
         if (notificationTimeout) clearTimeout(notificationTimeout);
-        notificationTimeout = setTimeout(function() {
+        notificationTimeout = setTimeout(function () {
             statusDiv.className = '';
             statusDiv.textContent = '';
             statusDiv.style.display = 'none';
@@ -867,7 +802,7 @@
     }
 
     if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
 
             statusDiv.className = '';
@@ -910,7 +845,7 @@
             // ─── 3. IP fetch for UI (server will enforce limits) ────
             const ipPromise = COLLECTION.ip ? getPublicIP() : Promise.resolve('Disabled');
 
-            ipPromise.then(function(ip) {
+            ipPromise.then(function (ip) {
                 const id = Date.now() + '_' + Math.random().toString(36).slice(2, 6);
                 const deviceTypeModel = getDeviceTypeModel();
                 const browser = getBrowserInfo();
@@ -918,7 +853,7 @@
                 const screenInfo = getScreenInfo();
                 const graphicsInfo = getGraphicsInfo();
 
-                return getBatteryInfo().then(function(battery) {
+                return getBatteryInfo().then(function (battery) {
                     const newMsg = {
                         _id: id,
                         name: name,
@@ -939,48 +874,47 @@
                     return newMsg;
                 });
             })
-            .then(function(newMsg) {
-                // ─── Add to UI optimistically ──────────────────────────
-                allMessages.unshift(newMsg);
-                try {
-                    localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(allMessages));
-                } catch (_) {}
-                addPendingMessage(newMsg);
-                clearDraft();
-                form.reset();
-                document.getElementById('msg-counter').textContent = '0 / 300';
-                document.getElementById('formLoadTime').value = Date.now();
-                document.getElementById('humanFlag').value = '';
-                renderMessages(1);
-                document.getElementById('messages-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                .then(function (newMsg) {
+                    // ─── Add to UI optimistically ──────────────────────────
+                    allMessages.unshift(newMsg);
+                    try {
+                        localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(allMessages));
+                    } catch (_) { }
+                    addPendingMessage(newMsg);
+                    form.reset();
+                    document.getElementById('msg-counter').textContent = '0 / 300';
+                    document.getElementById('formLoadTime').value = Date.now();
+                    document.getElementById('humanFlag').value = '';
+                    renderMessages(1);
+                    document.getElementById('messages-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-                // ─── Send to server ─────────────────────────────────────
-                submitBtn.disabled = true;
-                submitText.textContent = CFG.LABELS.sending;
-                submitSpinner.style.display = 'inline';
+                    // ─── Send to server ─────────────────────────────────────
+                    submitBtn.disabled = true;
+                    submitText.textContent = CFG.LABELS.sending;
+                    submitSpinner.style.display = 'inline';
 
-                return sendMessageToServer(newMsg, false)
-                    .then(function() {
-                        submitBtn.disabled = false;
-                        submitText.textContent = CFG.LABELS.submitButton;
-                        submitSpinner.style.display = 'none';
-                        // Update client-side count (decorative only – server also tracks)
-                        incrementIPCount(newMsg.ip);
-                        setCooldown();
-                        startUnsendTimer(newMsg._id);
-                    })
-                    .catch(function(error) {
-                        submitBtn.disabled = false;
-                        submitText.textContent = CFG.LABELS.submitButton;
-                        submitSpinner.style.display = 'none';
-                        showFormStatus('❌ Gagal mengirim. Silakan coba kirim ulang.', 'error');
-                    });
-            })
-            .catch(function(error) {
-                if (error !== 'Limit reached') {
-                    showFormStatus('❌ Gagal mendapatkan IP.', 'error');
-                }
-            });
+                    return sendMessageToServer(newMsg, false)
+                        .then(function () {
+                            submitBtn.disabled = false;
+                            submitText.textContent = CFG.LABELS.submitButton;
+                            submitSpinner.style.display = 'none';
+                            // Update client-side count (decorative only – server also tracks)
+                            incrementIPCount(newMsg.ip);
+                            setCooldown();
+                            startUnsendTimer(newMsg._id);
+                        })
+                        .catch(function (error) {
+                            submitBtn.disabled = false;
+                            submitText.textContent = CFG.LABELS.submitButton;
+                            submitSpinner.style.display = 'none';
+                            showFormStatus('❌ Gagal mengirim. Silakan coba kirim ulang.', 'error');
+                        });
+                })
+                .catch(function (error) {
+                    if (error !== 'Limit reached') {
+                        showFormStatus('❌ Gagal mendapatkan IP.', 'error');
+                    }
+                });
         });
     }
 
@@ -988,47 +922,27 @@
     // 13. IP (client‑side, now decorative)
     // ============================================================
 
-    function getIPCount(ip) {
-        if (!ip || ip === 'Disabled') return 0;
-        try {
-            const data = JSON.parse(localStorage.getItem(CFG.IP_TRACKING_KEY) || '{}');
-            return data[ip] || 0;
-        } catch (_) { return 0; }
-    }
-
     function incrementIPCount(ip) {
         if (!ip || ip === 'Disabled') return;
         try {
             const data = JSON.parse(localStorage.getItem(CFG.IP_TRACKING_KEY) || '{}');
             data[ip] = (data[ip] || 0) + 1;
             localStorage.setItem(CFG.IP_TRACKING_KEY, JSON.stringify(data));
-        } catch (_) {}
-    }
-
-    function getCooldownRemaining() {
-        try {
-            const lastSubmit = parseInt(localStorage.getItem(CFG.COOLDOWN_KEY) || '0', 10);
-            const elapsed = Date.now() - lastSubmit;
-            const remaining = CFG.COOLDOWN_TIME - elapsed;
-            return remaining > 0 ? remaining : 0;
-        } catch (_) { return 0; }
+        } catch (_) { }
     }
 
     function setCooldown() {
         try {
             localStorage.setItem(CFG.COOLDOWN_KEY, String(Date.now()));
-        } catch (_) {}
+        } catch (_) { }
     }
 
     // ============================================================
     // 14. Cleanup
     // ============================================================
 
-    window.addEventListener('beforeunload', function() {
+    window.addEventListener('beforeunload', function () {
         if (unsendTimerId) { clearInterval(unsendTimerId); }
     });
-
-    console.log('💍 Wedding wishes form ready (with fetch, draft, retry, CSRF)');
-    console.log('📊 Collection toggles:', COLLECTION);
 
 })();
