@@ -8,7 +8,7 @@
  * ============================================================
  */
 
-const CONFIG = (function() {
+const CONFIG = (function () {
     'use strict';
 
     // ============================================================
@@ -39,7 +39,7 @@ const CONFIG = (function() {
     // ============================================================
     // 📡 BACKEND URL
     // ============================================================
-    const WEB_APP_URL = 'xxxxxxx'; // your Google Apps Script web app URL
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwceol5RTl762THc0xaxIOUJ9D2LFglIQf1DmqxJEFZ2exoE-AE7PxpbcgmikCOEpNiyw/exec';
 
     // ============================================================
     // 💾 LOCAL STORAGE KEYS
