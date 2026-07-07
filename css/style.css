@@ -368,7 +368,7 @@ textarea.field {
     color: var(--accent);
 }
 
-/* ----- MESSAGE STATUS / RETRY / DISCARD ----- */
+/* ----- MESSAGE STATUS ----- */
 .message-actions {
     display: flex;
     align-items: center;
@@ -381,22 +381,6 @@ textarea.field {
     color: var(--text-muted);
     white-space: nowrap;
 }
-.message-status.failed { color: var(--error-fg); }
-.message-status.offline { color: var(--text-muted); }
-.retry-btn, .discard-btn {
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 20px;
-    border: 1px solid currentColor;
-    cursor: pointer;
-    background: transparent;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-.retry-btn { color: var(--accent-strong); }
-.discard-btn { color: var(--error-fg); }
-.retry-btn:hover, .discard-btn:hover { filter: brightness(1.1); }
 
 /* ----- PAGINATION ----- */
 .pagination {
@@ -444,7 +428,12 @@ textarea.field {
     transform: none !important;
 }
 @media (max-width: 600px) {
-    .page-btn { min-width: 48px; height: 48px; padding: 0 16px; font-size: 1rem; border-radius: 14px; }
+    .page-btn { min-width: 48px; height: 48px; padding: 0 16px; font-size: 1rem; border-radius: 14px; position: relative; }
+    .page-btn::after {
+        content: '';
+        position: absolute;
+        top: -8px; bottom: -8px; left: -8px; right: -8px;
+    }
     .pagination { gap: 10px; }
 }
 

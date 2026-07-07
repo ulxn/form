@@ -8,7 +8,7 @@
  * ============================================================
  */
 
-const CONFIG = (function() {
+const CONFIG = (function () {
     'use strict';
 
     // ============================================================
@@ -39,14 +39,19 @@ const CONFIG = (function() {
     // ============================================================
     // 📡 BACKEND URL
     // ============================================================
-    const WEB_APP_URL = 'xxxxxxx'; // your Google Apps Script web app URL
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwceol5RTl762THc0xaxIOUJ9D2LFglIQf1DmqxJEFZ2exoE-AE7PxpbcgmikCOEpNiyw/exec';
+
+    // ============================================================
+    // 🎛️ MISC FEATURE TOGGLES
+    // ============================================================
+    const PAGE_SIZE = 5;          // messages per page in the wishes list
+    const ANTI_SNOOPING = false;  // true = block right-click / devtools shortcuts
 
     // ============================================================
     // 💾 LOCAL STORAGE KEYS
     // ============================================================
     const STORAGE_KEY = 'zw_messages';        // main message list (merged)
     const PENDING_KEY = 'zw_pending';         // pending messages awaiting confirmation
-    const DRAFT_KEY = 'zw_draft';             // form draft
     const IP_TRACKING_KEY = 'zw_ip_tracking'; // IP message counts
     const COOLDOWN_KEY = 'zw_cooldown';       // cooldown timestamp
 
@@ -64,27 +69,22 @@ const CONFIG = (function() {
     };
 
     // ============================================================
-    // ANTI-SNOOPING
+    // 👋 GREETING (via ?name= URL param)
     // ============================================================
-    const ANTI_SNOOPING = false;
+    const GREETING_PARAM = 'name';
 
     // ============================================================
     // 🎨 TEXT & LABELS
     // ============================================================
     const LABELS = {
-        defaultGreeting: 'Halo, Sahabat.',
         heroTitle: 'Bagikan Ucapan &amp; Doa Terbaikmu',
         formSubtitle: 'Ucapan dan doa terbaik untuk ' + BRIDE_NAME + ' dan ' + GROOM_NAME,
-        brandSeparator: ' &amp; ',
+        defaultGreeting: 'Halo!',
         submitButton: 'Kirim',
         sending: 'Mengirim...',
-        errorGeneric: 'Terjadi kesalahan.',
         errorBot: '🤖 Bot detected.',
         errorTooFast: '⏳ Take your time, Buddy.',
         errorNoInteraction: '🤖 Please interact with the page before submitting.',
-        errorConnection: 'Gagal terhubung. Periksa koneksi dan coba lagi.',
-        errorCooldown: '⏳ Tunggu sebentar untuk mengirim pesan lagi ya.',
-        errorLimitReached: '🚫 Anda telah mencapai batas maksimum pesan.',
         unsendToast: 'Pesan terkirim',
         unsendButton: 'Batalkan',
         unsendNotification: '↩ Pesan batal dikirimkan.',
@@ -95,16 +95,8 @@ const CONFIG = (function() {
         namePlaceholder: 'John Doe',
         messagePlaceholder: 'Barakallahu lakuma wa baraka \'alaikuma wa jama\'a bainakuma fii khair~',
         wishesTitle: 'Wishes',
-        rsvpLabel: 'RSVP',
-        nameLabel: 'Nama',
-        messageLabel: 'Pesan',
         pendingStatus: '⏳ Mengirim...',
     };
-
-    // ============================================================
-    // 🧩 GREETING URL PARAM QUERY
-    // ============================================================
-    const GREETING_PARAM = 'name';
 
     // ============================================================
     // 📦 EXPORT
@@ -120,14 +112,14 @@ const CONFIG = (function() {
         FORM_STATUS_DURATION: FORM_STATUS_DURATION,
         NOTIFICATION_DURATION: NOTIFICATION_DURATION,
         WEB_APP_URL: WEB_APP_URL,
+        PAGE_SIZE: PAGE_SIZE,
+        ANTI_SNOOPING: ANTI_SNOOPING,
+        GREETING_PARAM: GREETING_PARAM,
         STORAGE_KEY: STORAGE_KEY,
         PENDING_KEY: PENDING_KEY,
-        DRAFT_KEY: DRAFT_KEY,
         IP_TRACKING_KEY: IP_TRACKING_KEY,
         COOLDOWN_KEY: COOLDOWN_KEY,
         COLLECTION: COLLECTION,
-        ANTI_SNOOPING: ANTI_SNOOPING,
-        GREETING_PARAM: GREETING_PARAM,
         LABELS: LABELS,
     };
 
