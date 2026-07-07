@@ -508,6 +508,15 @@ textarea.field {
     background: var(--error-bg);
 }
 
+/* ── Footer ──────────────────────────────── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 20px;
+  text-align: center;
+  font-size: .74rem;
+  color: var(--accent-strong);
+}
+
 /* ----- RESPONSIVE (additional) ----- */
 @media (max-width: 480px) {
     .topbar { padding: 12px 14px; }
