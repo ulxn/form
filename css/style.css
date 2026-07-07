@@ -463,7 +463,7 @@ textarea.field {
     display: flex;
     align-items: center;
     gap: 16px;
-    pointer-events: auto;
+    pointer-events: none;
     font-size: 0.9rem;
     opacity: 0;
     transform: translateY(20px) scale(0.95);
@@ -478,6 +478,7 @@ textarea.field {
 .toast.show {
     opacity: 1;
     transform: translateY(0) scale(1);
+    pointer-events: auto;
 }
 .toast .toast-msg { display: flex; align-items: center; gap: 10px; }
 .toast .toast-msg i { color: var(--accent); }
