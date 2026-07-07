@@ -14,8 +14,8 @@ const CONFIG = (function () {
     // ============================================================
     // 👰🤵 BRIDE & GROOM NAMES
     // ============================================================
-    const BRIDE_NAME = 'Zwageri';
-    const GROOM_NAME = 'Lily';
+    const GROOM_NAME = 'Zwageri';
+    const BRIDE_NAME = 'Lily';
 
     // ============================================================
     // ⏱️ ANTI‑SPAM SETTINGS
