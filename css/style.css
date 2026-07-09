@@ -6,15 +6,26 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
+html, body {
+    height: 100%;
+}
+
 /* ----- BODY ----- */
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     background: var(--bg-page);
+    display: flex;
+    flex-direction: column;
     color: var(--text-primary);
     min-height: 100vh;
     line-height: 1.6;
     transition: background 0.4s, color 0.4s;
 }
+
+main.page-wrap {
+    flex: 1;
+}
+
 * { transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s; }
 h1, h2, h3 { font-family: 'Cormorant Garamond', serif; }
 
@@ -511,6 +522,7 @@ textarea.field {
 /* ── Footer ──────────────────────────────── */
 footer {
   border-top: 1px solid var(--border);
+  background: var(--bg-page);
   padding: 20px;
   text-align: center;
   font-size: .74rem;
