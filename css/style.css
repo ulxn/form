@@ -69,7 +69,7 @@ body {
     display: flex;
     flex-direction: column;
     color: var(--text-primary);
-    min-height: 100vh;
+    height: 100vh;
     line-height: 1.6;
     transition: background 0.4s, color 0.4s;
 }
@@ -92,7 +92,7 @@ h1, h2, h3 { font-family: 'Cormorant Garamond', serif; }
     gap: clamp(16px, 2.5vw, 24px);
     align-items: stretch;
 }
-.form-col { flex: 1 1 360px; }
+.form-col { flex: 1 1 360px; min-width: 260px; display: flex; flex-direction: column; }
 .messages-col { flex: 1 1 360px; min-width: 260px; display: flex; flex-direction: column; }
 
 /* ----- FORM STATUS ----- */
@@ -317,6 +317,8 @@ textarea.field {
 
 /* ----- MESSAGES CARD (with scrollable list on desktop) ----- */
 .messages-card {
+    /* background: transparent; */
+    /* backdrop-filter: blur(12px); */
     padding: clamp(18px, 2.8vw, 30px);
     display: flex;
     flex-direction: column;
@@ -371,50 +373,6 @@ textarea.field {
     .message-list-wrap {
         flex: 1 1 0;
         min-height: 0;
-    }
-}
-
-/* ─── Desktop: pin the page to the viewport height so the header
-       and footer are always visible; only the grid/cards scroll ─── */
-@media (min-width: 900px) {
-    html, body {
-        height: 100vh;
-        overflow: hidden;
-    }
-    .page-wrap {
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        overflow: hidden;
-        padding-bottom: clamp(16px, 3vw, 36px);
-    }
-    .hero { flex-shrink: 0; }
-    .grid {
-        flex: 1 1 auto;
-        min-height: 0;
-    }
-    .form-col,
-    .messages-col {
-        min-height: 0;
-        overflow: hidden;
-    }
-    .form-card {
-        overflow-y: auto;
-    }
-}
-
-/* ─── Mobile: no forced height, no scrollbar ─── */
-@media (max-width: 899px) {
-    .messages-col {
-        flex: 1 1 360px;
-        min-width: 260px;
-    }
-    .message-list-wrap {
-        overflow-y: visible;
-        flex: none;
-        height: auto;
-        padding-right: 0;
-        margin-right: 0;
     }
 }
 
