@@ -26,39 +26,28 @@
     <!-- JavaScript: config first, then main script -->
     <script defer src="js/config.js"></script>
     <script defer src="js/script.js"></script>
-
-    <!-- Critical inline CSS -->
-    <style>
-        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-        html{scroll-behavior:smooth}
-        body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-page);color:var(--text-primary);min-height:100vh;line-height:1.6;transition:background .4s,color .4s}
-        .page-wrap{max-width:1180px;margin:0 auto;padding:clamp(16px,3vw,36px) clamp(16px,4vw,48px) 60px}
-        .grid{display:flex;flex-wrap:wrap;gap:clamp(16px,2.5vw,24px);align-items:stretch}
-        .form-col{flex:1 1 360px}
-        .messages-col{flex:1 1 360px;min-width:260px;display:flex;flex-direction:column}
-        .card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--card-radius);box-shadow:var(--shadow);display:flex;flex-direction:column;flex:1;min-height:0;transition:box-shadow .3s}
-        .btn{display:inline-flex;align-items:center;gap:10px;padding:12px 28px;border-radius:50px;font-weight:700;font-size:.9rem;letter-spacing:.3px;cursor:pointer;border:none;background:var(--accent-strong);color:var(--accent-contrast);box-shadow:var(--shadow);width:100%;justify-content:center;transition:transform .2s,filter .2s,box-shadow .3s}
-        .btn:hover{transform:translateY(-2px);filter:brightness(1.06);box-shadow:var(--shadow-lg)}
-        .btn:disabled{opacity:.7;cursor:not-allowed;transform:none !important;filter:grayscale(.3)}
-        .field{padding:10px 14px;background:var(--bg-input);border:1.5px solid var(--border-subtle);border-radius:12px;color:var(--text-primary);font-family:inherit;font-size:.9rem;width:100%;appearance:none;transition:border-color .2s,box-shadow .2s}
-        .field:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px rgba(197,179,211,.2)}
-        body.dark-theme .field:focus{box-shadow:0 0 0 4px rgba(244,171,196,.15)}
-        .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:14px clamp(16px,4vw,48px);background:transparent;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border-subtle)}
-        #theme-toggle{color:var(--text-secondary);font-size:1rem;cursor:pointer;width:38px;height:38px;border-radius:50%;background:transparent;border:1px transparent;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:transform .2s,box-shadow .3s}
-        #theme-toggle:hover{color:var(--accent-strong);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
-        #theme-toggle .toggle-label{display:none}
-        @media(min-width:900px){.form-col,.messages-col{flex:1 1 0}.form-col{order:2}.messages-col{order:1}}
-        .messages-count{display:none}
-        #formStatus{display:none;text-align:center;padding:10px 14px;margin-top:12px;border-radius:12px;font-weight:600;font-size:.85rem}
-        #formStatus.success{display:block;background:var(--success-bg);color:var(--success-fg);border:1px solid currentColor}
-        #formStatus.error{display:block;background:var(--error-bg);color:var(--error-fg);border:1px solid currentColor}
-        .privacy-notice{font-size:.75rem;color:var(--text-muted);text-align:center;margin-top:16px;opacity:.8;line-height:1.5}
-        .privacy-notice i{color:var(--accent);margin-right:6px}
-        :root{--l-100:#FBEFEF;--l-200:#FFE2E2;--l-300:#F5CBCB;--l-400:#C5B3D3;--d-100:#F4ABC4;--d-200:#595B83;--d-300:#333456;--d-400:#060930;--bg-page:var(--l-100);--bg-card:#fff;--bg-card-alt:var(--l-100);--bg-input:#fff;--accent:var(--l-400);--accent-strong:var(--d-300);--accent-contrast:#fff;--text-primary:#3a2c3c;--text-secondary:#6f5f6f;--text-muted:#9c8b9c;--border-subtle:var(--l-300);--shadow:0 8px 32px rgba(160,140,175,.3);--shadow-lg:0 12px 48px rgba(160,140,175,.25);--placeholder-color:#b7a6b7;--chip-hadir-fg:#6b9274;--chip-belum-fg:#b27777;--error-bg:rgba(224,96,96,.1);--error-fg:#c24747;--success-bg:rgba(107,168,120,.12);--success-fg:#3f7d4c;--card-radius:20px;--toast-bg:#fff;--toast-text:#3a2c3c;--toast-shadow:0 8px 32px rgba(160,140,175,.35)}
-        body.dark-theme{--bg-page:var(--d-400);--bg-card:var(--d-300);--bg-card-alt:#2a2b4a;--bg-input:#23244080;--accent:var(--d-100);--accent-strong:var(--d-100);--accent-contrast:#2a1220;--text-primary:#f5eef2;--text-secondary:#cfc9de;--text-muted:#9c96b8;--border-subtle:#46477a;--shadow:0 8px 32px rgba(0,0,0,.55);--shadow-lg:0 12px 48px rgba(0,0,0,.6);--placeholder-color:#7d789e;--chip-hadir-fg:#6b9274;--chip-belum-fg:#b27777;--error-bg:rgba(224,96,96,.14);--error-fg:#ff9d9d;--success-bg:rgba(244,171,196,.14);--success-fg:#f4abc4;--toast-bg:var(--d-300);--toast-text:#f5eef2;--toast-shadow:0 8px 32px rgba(0,0,0,.6)}
-    </style>
 </head>
 <body>
+
+<!-- ====== DECOR ====== -->
+<div class="bokeh-wrap" aria-hidden="true">
+    <div class="bokeh b1"></div>
+    <div class="bokeh b2"></div>
+    <div class="bokeh b3"></div>
+    <div class="bokeh b4"></div>
+</div>
+<div class="petals-wrap" aria-hidden="true">
+    <div class="petal p1"></div>
+    <div class="petal p2"></div>
+    <div class="petal p3"></div>
+    <div class="petal p4"></div>
+    <div class="petal p5"></div>
+    <div class="petal p6"></div>
+    <div class="petal p7"></div>
+    <div class="petal p8"></div>
+    <div class="petal p9"></div>
+    <div class="petal p10"></div>
+</div>
 
     <!-- ====== TOPBAR ====== -->
     <header class="topbar">
@@ -180,6 +169,6 @@
         </div>
     </div>
 
-    <footer>©2026 Lorem Ipsum • <span id="brideName">Lily</span> <i class="fas fa-heart" aria-hidden="true"></i> <span id="groomName">Zwageri</span></footer>
+    <footer>©2026 Lorem Ipsum • <span class="js-brideName">Lily</span> <i class="fas fa-heart" aria-hidden="true"></i> <span class="js-groomName">Zwageri</span></footer>
 </body>
 </html>
