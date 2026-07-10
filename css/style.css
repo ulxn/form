@@ -2,13 +2,65 @@
    WEDDING WISHES – Full Styles
    ============================================================ */
 
+/* ----- THEME VARIABLES ----- */
+:root {
+    --l-100: #FBEFEF; --l-200: #FFE2E2; --l-300: #F5CBCB; --l-400: #C5B3D3;
+    --d-100: #F4ABC4; --d-200: #595B83; --d-300: #333456; --d-400: #060930;
+
+    --bg-page: var(--l-100);
+    --bg-card: #fff;
+    --bg-card-alt: var(--l-100);
+    --bg-input: #fff;
+    --accent: var(--l-400);
+    --accent-strong: var(--d-300);
+    --accent-contrast: #fff;
+    --text-primary: #3a2c3c;
+    --text-secondary: #6f5f6f;
+    --text-muted: #9c8b9c;
+    --border-subtle: var(--l-300);
+    --shadow: 0 8px 32px rgba(160, 140, 175, .3);
+    --shadow-lg: 0 12px 48px rgba(160, 140, 175, .25);
+    --placeholder-color: #b7a6b7;
+    --chip-hadir-fg: #6b9274;
+    --chip-belum-fg: #b27777;
+    --error-bg: rgba(224, 96, 96, .1);
+    --error-fg: #c24747;
+    --success-bg: rgba(107, 168, 120, .12);
+    --success-fg: #3f7d4c;
+    --card-radius: 20px;
+    --toast-bg: #fff;
+    --toast-text: #3a2c3c;
+    --toast-shadow: 0 8px 32px rgba(160, 140, 175, .35);
+}
+
+body.dark-theme {
+    --bg-page: var(--d-400);
+    --bg-card: var(--d-300);
+    --bg-card-alt: #2a2b4a;
+    --bg-input: #23244080;
+    --accent: var(--d-100);
+    --accent-strong: var(--d-100);
+    --accent-contrast: #2a1220;
+    --text-primary: #f5eef2;
+    --text-secondary: #cfc9de;
+    --text-muted: #9c96b8;
+    --border-subtle: #46477a;
+    --shadow: 0 8px 32px rgba(0, 0, 0, .55);
+    --shadow-lg: 0 12px 48px rgba(0, 0, 0, .6);
+    --placeholder-color: #7d789e;
+    --error-bg: rgba(224, 96, 96, .14);
+    --error-fg: #ff9d9d;
+    --success-bg: rgba(244, 171, 196, .14);
+    --success-fg: #f4abc4;
+    --toast-bg: var(--d-300);
+    --toast-text: #f5eef2;
+    --toast-shadow: 0 8px 32px rgba(0, 0, 0, .6);
+}
+
 /* ----- RESET ----- */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-
-html, body {
-    height: 100%;
-}
+html, body { height: 100%; }
 
 /* ----- BODY ----- */
 body {
@@ -22,12 +74,49 @@ body {
     transition: background 0.4s, color 0.4s;
 }
 
-main.page-wrap {
-    flex: 1;
-}
-
 * { transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s; }
 h1, h2, h3 { font-family: 'Cormorant Garamond', serif; }
+
+/* ----- LAYOUT ----- */
+.page-wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(16px, 3vw, 36px) clamp(16px, 4vw, 48px) 60px;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+}
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(16px, 2.5vw, 24px);
+    align-items: stretch;
+}
+.form-col { flex: 1 1 360px; }
+.messages-col { flex: 1 1 360px; min-width: 260px; display: flex; flex-direction: column; }
+
+/* ----- FORM STATUS ----- */
+#formStatus {
+    display: none;
+    text-align: center;
+    padding: 10px 14px;
+    margin-top: 12px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: .85rem;
+}
+#formStatus.success { display: block; background: var(--success-bg); color: var(--success-fg); border: 1px solid currentColor; }
+#formStatus.error { display: block; background: var(--error-bg); color: var(--error-fg); border: 1px solid currentColor; }
+
+.privacy-notice {
+    font-size: .75rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 16px;
+    opacity: .8;
+    line-height: 1.5;
+}
+.privacy-notice i { color: var(--accent); margin-right: 6px; }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -71,7 +160,8 @@ h1, h2, h3 { font-family: 'Cormorant Garamond', serif; }
     background: transparent;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-bottom: none;
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
 }
 .topbar .brand {
     display: flex;
@@ -281,6 +371,35 @@ textarea.field {
     .message-list-wrap {
         flex: 1 1 0;
         min-height: 0;
+    }
+}
+
+/* ─── Desktop: pin the page to the viewport height so the header
+       and footer are always visible; only the grid/cards scroll ─── */
+@media (min-width: 900px) {
+    html, body {
+        height: 100vh;
+        overflow: hidden;
+    }
+    .page-wrap {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        padding-bottom: clamp(16px, 3vw, 36px);
+    }
+    .hero { flex-shrink: 0; }
+    .grid {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+    .form-col,
+    .messages-col {
+        min-height: 0;
+        overflow: hidden;
+    }
+    .form-card {
+        overflow-y: auto;
     }
 }
 
@@ -521,12 +640,14 @@ textarea.field {
 
 /* ── Footer ──────────────────────────────── */
 footer {
-  border-top: 1px solid var(--border);
-  background: var(--bg-page);
+  border-top: 1px solid var(--border-subtle);
+  background: transparent;
+  backdrop-filter: blur(5px);
   padding: 20px;
   text-align: center;
   font-size: .74rem;
   color: var(--accent-strong);
+  flex-shrink: 0;
 }
 
 /* ----- RESPONSIVE (additional) ----- */
@@ -550,3 +671,89 @@ body.anti-snooping {
     -moz-user-select: none;
     -ms-user-select: none;
 }
+
+/* ─── BOKEH BLOBS ─── */
+.bokeh-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+.bokeh {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+/* Light theme blobs */
+body:not(.dark-theme) .bokeh { opacity: 0.45; }
+body:not(.dark-theme) .b1 { width: 340px; height: 340px; background: #f4abc4; top: -80px; left: -60px; }
+body:not(.dark-theme) .b2 { width: 280px; height: 280px; background: #c5b3d3; bottom: 10%; right: -60px; }
+body:not(.dark-theme) .b3 { width: 220px; height: 220px; background: #f7cdd8; bottom: 30%; left: 10%; }
+body:not(.dark-theme) .b4 { width: 200px; height: 200px; background: #d4b8e0; top: 40%; right: 15%; }
+
+/* Dark theme blobs */
+body.dark-theme .bokeh { opacity: 0.18; }
+body.dark-theme .b1 { width: 400px; height: 400px; background: #f4abc4; top: -100px; left: -80px; }
+body.dark-theme .b2 { width: 320px; height: 320px; background: #595b83; bottom: 5%; right: -80px; }
+body.dark-theme .b3 { width: 260px; height: 260px; background: #333456; bottom: 35%; left: 5%; }
+body.dark-theme .b4 { width: 240px; height: 240px; background: #d4b8e0; top: 45%; right: 10%; }
+
+/* ─── FLOATING PETALS ─── */
+@keyframes petalFall {
+    0%   { transform: translateY(-40px) translateX(0) rotate(0deg);   opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 0.7; }
+    100% { transform: translateY(105vh) translateX(60px) rotate(360deg); opacity: 0; }
+}
+@keyframes petalSway {
+    0%,100% { margin-left: 0; }
+    50%      { margin-left: 30px; }
+}
+
+.petals-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+.petal {
+    position: absolute;
+    top: -20px;
+    width: 10px;
+    height: 14px;
+    border-radius: 60% 40% 60% 40% / 50% 50% 50% 50%;
+    animation: petalFall linear infinite, petalSway ease-in-out infinite;
+    opacity: 0;
+}
+
+/* Light theme petals — soft pinks/mauves */
+body:not(.dark-theme) .p1  { background: #e8a0b8; left: 8%;  animation-duration: 10s, 4s; animation-delay: 0s,    0s; }
+body:not(.dark-theme) .p2  { background: #c5b3d3; left: 18%; animation-duration: 13s, 5s; animation-delay: 2s,    1s; }
+body:not(.dark-theme) .p3  { background: #f4abc4; left: 30%; animation-duration: 9s,  3s; animation-delay: 4s,  0.5s; }
+body:not(.dark-theme) .p4  { background: #d4a8cc; left: 45%; animation-duration: 14s, 6s; animation-delay: 1s,  2.5s; }
+body:not(.dark-theme) .p5  { background: #e8b8c8; left: 55%; animation-duration: 11s, 4s; animation-delay: 6s,    1s; }
+body:not(.dark-theme) .p6  { background: #c5b3d3; left: 65%; animation-duration: 12s, 5s; animation-delay: 3s,    3s; }
+body:not(.dark-theme) .p7  { background: #f0b8cc; left: 72%; animation-duration: 8s,  3s; animation-delay: 7s,  0.5s; }
+body:not(.dark-theme) .p8  { background: #d8a8d0; left: 80%; animation-duration: 15s, 6s; animation-delay: 0.5s, 2s; }
+body:not(.dark-theme) .p9  { background: #e8a0b8; left: 88%; animation-duration: 10s, 4s; animation-delay: 5s,  1.5s; }
+body:not(.dark-theme) .p10 { background: #c8b0d8; left: 95%; animation-duration: 13s, 5s; animation-delay: 2.5s, 0s; }
+
+/* Dark theme petals — deeper pinks/purples */
+body.dark-theme .p1  { background: #f4abc4; left: 8%;  animation-duration: 10s, 4s; animation-delay: 0s,    0s; }
+body.dark-theme .p2  { background: #9b80c0; left: 18%; animation-duration: 13s, 5s; animation-delay: 2s,    1s; }
+body.dark-theme .p3  { background: #e880a8; left: 30%; animation-duration: 9s,  3s; animation-delay: 4s,  0.5s; }
+body.dark-theme .p4  { background: #b090d0; left: 45%; animation-duration: 14s, 6s; animation-delay: 1s,  2.5s; }
+body.dark-theme .p5  { background: #f4abc4; left: 55%; animation-duration: 11s, 4s; animation-delay: 6s,    1s; }
+body.dark-theme .p6  { background: #8878b8; left: 65%; animation-duration: 12s, 5s; animation-delay: 3s,    3s; }
+body.dark-theme .p7  { background: #e090b8; left: 72%; animation-duration: 8s,  3s; animation-delay: 7s,  0.5s; }
+body.dark-theme .p8  { background: #a880c8; left: 80%; animation-duration: 15s, 6s; animation-delay: 0.5s, 2s; }
+body.dark-theme .p9  { background: #f4abc4; left: 88%; animation-duration: 10s, 4s; animation-delay: 5s,  1.5s; }
+body.dark-theme .p10 { background: #9878b8; left: 95%; animation-duration: 13s, 5s; animation-delay: 2.5s, 0s; }
+
+/* ─── make sure content sits above decor ─── */
+.topbar, .page-wrap, footer { position: relative; z-index: 1; }
