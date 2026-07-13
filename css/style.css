@@ -15,8 +15,8 @@
     --accent-strong: var(--d-300);
     --accent-contrast: #fff;
     --text-primary: #3a2c3c;
-    --text-secondary: #6f5f6f;
-    --text-muted: #9c8b9c;
+    --text-secondary: #5c4d5c;
+    --text-muted: #776877;
     --border-subtle: var(--l-300);
     --shadow: 0 8px 32px rgba(160, 140, 175, .3);
     --shadow-lg: 0 12px 48px rgba(160, 140, 175, .25);
@@ -689,8 +689,8 @@ body.dark-theme .b4 { width: 240px; height: 240px; background: #d4b8e0; top: 45%
     100% { transform: translateY(105vh) translateX(60px) rotate(360deg); opacity: 0; }
 }
 @keyframes petalSway {
-    0%,100% { margin-left: 0; }
-    50%      { margin-left: 30px; }
+    0%,100% { translate: 0 0; }
+    50%      { translate: 30px 0; }
 }
 
 .petals-wrap {

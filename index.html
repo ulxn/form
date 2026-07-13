@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
     <title>ZW - Wishes &amp; RSVP</title>
+    <meta name="description" content="Kirim ucapan dan doa terbaik untuk Zwageri dan Lily, serta konfirmasi kehadiran (RSVP) Anda." />
 
     <!-- Resource hints -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -170,5 +171,34 @@
     </div>
 
     <footer>©2026 Lorem Ipsum • <span class="js-brideName">Lily</span> <i class="fas fa-heart" aria-hidden="true"></i> <span class="js-groomName">Zwageri</span></footer>
+
+    <!-- Accessibility patch: labels pagination arrows dynamically rendered by script.js -->
+    <script>
+    (function () {
+        function labelPagination() {
+            var pag = document.getElementById('pagination');
+            if (!pag) return;
+            var buttons = pag.querySelectorAll('button.page-btn');
+            buttons.forEach(function (btn) {
+                if (btn.getAttribute('aria-label')) return;
+                var icon = btn.querySelector('i');
+                if (icon && icon.classList.contains('fa-chevron-left')) {
+                    btn.setAttribute('aria-label', 'Halaman sebelumnya');
+                } else if (icon && icon.classList.contains('fa-chevron-right')) {
+                    btn.setAttribute('aria-label', 'Halaman berikutnya');
+                } else if (/^\d+$/.test(btn.textContent.trim())) {
+                    btn.setAttribute('aria-label', 'Halaman ' + btn.textContent.trim());
+                } else if (!btn.textContent.trim()) {
+                    btn.setAttribute('aria-label', 'Ganti halaman');
+                }
+            });
+        }
+        var target = document.getElementById('pagination');
+        if (target) {
+            new MutationObserver(labelPagination).observe(target, { childList: true, subtree: true });
+        }
+        labelPagination();
+    })();
+    </script>
 </body>
 </html>
